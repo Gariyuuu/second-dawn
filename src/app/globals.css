@@ -1,26 +1,156 @@
+/* Hallmark · component: game-HUD overlay · genre: atmospheric · theme: custom
+ * (vibe: "dark colony telemetry, warm amber, near-future" · paper oklch(16% 0.01 60) · accent oklch(78% 0.14 70) amber
+ *  · Tomorrow display + IBM Plex Sans body + JetBrains Mono data outlier)
+ * pre-emit critique: P4 H4 E4 S4 R4 V4
+ * states: default · hover · focus-visible · active · disabled covered on all HUD controls
+ */
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* paper (panel surfaces, dark → elevated) */
+  --color-paper-0: oklch(13% 0.012 60 / 0.82);
+  --color-paper-1: oklch(18% 0.014 60 / 0.88);
+  --color-paper-2: oklch(24% 0.016 60);
+  --color-paper-3: oklch(30% 0.018 60);
+  /* ink */
+  --color-ink: oklch(92% 0.01 75);
+  --color-ink-muted: oklch(70% 0.014 70);
+  --color-ink-faint: oklch(52% 0.014 70);
+  /* accent — single warm amber */
+  --color-accent: oklch(78% 0.14 70);
+  --color-accent-strong: oklch(70% 0.16 60);
+  --color-on-accent: oklch(16% 0.03 70);
+  /* semantic */
+  --color-danger: oklch(64% 0.18 25);
+  --color-ok: oklch(72% 0.13 150);
+  --color-mode: oklch(72% 0.11 310);
+  --color-focus: oklch(80% 0.15 70);
+  /* hairline */
+  --rule: oklch(40% 0.02 70 / 0.5);
+
+  --font-display-stack: var(--font-display), ui-sans-serif, sans-serif;
+  --font-body-stack: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono-stack: var(--font-mono), ui-monospace, monospace;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-body-stack);
+  --font-mono: var(--font-mono-stack);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: oklch(10% 0.01 60);
+  color: var(--color-ink);
+  font-family: var(--font-body-stack);
 }
+
+/* ---------- HUD primitives ---------- */
+
+.hud-panel {
+  background: var(--color-paper-1);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px oklch(0% 0 0 / 0.35);
+}
+
+.hud-bar {
+  background: var(--color-paper-0);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(14px);
+}
+
+.hud-btn {
+  font-family: var(--font-mono-stack);
+  font-size: 12px;
+  line-height: 1;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  color: var(--color-ink-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.hud-btn:hover { background: var(--color-paper-3); color: var(--color-ink); }
+.hud-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.hud-btn:active { transform: translateY(1px); }
+.hud-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.hud-btn[data-on="true"] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent-strong);
+  font-weight: 700;
+}
+.hud-btn[data-tone="mode"][data-on="true"] {
+  background: var(--color-mode);
+  border-color: var(--color-mode);
+}
+.hud-btn[data-tone="danger"] {
+  color: oklch(80% 0.09 25);
+  border-color: oklch(45% 0.12 25 / 0.6);
+}
+.hud-btn[data-tone="danger"]:hover { background: oklch(30% 0.09 25); }
+
+.hud-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--color-paper-2);
+  border: 1px solid var(--rule);
+}
+
+.hud-chip {
+  font-family: var(--font-mono-stack);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.hud-label {
+  font-family: var(--font-mono-stack);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.hud-meter {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-paper-3);
+  overflow: hidden;
+}
+.hud-meter > div {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transition: width var(--dur-med) var(--ease-out);
+}
+
+.ticker-enter { animation: ticker-in var(--dur-med) var(--ease-out); }
+@keyframes ticker-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-enter { animation: none; }
+  .hud-btn, .hud-meter > div { transition: none; }
+}
+
+/* scrollbars inside panels */
+.hud-scroll::-webkit-scrollbar { width: 8px; }
+.hud-scroll::-webkit-scrollbar-thumb { background: var(--color-paper-3); border-radius: 4px; }
+.hud-scroll::-webkit-scrollbar-track { background: transparent; }
