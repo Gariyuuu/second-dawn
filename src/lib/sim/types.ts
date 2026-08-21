@@ -151,6 +151,24 @@ export type SettlementStage =
   | "city"
   | "regional_civilization";
 
+// Director-mode levers. Every field is read by the daily tick, so a change here
+// diverges the history from that day forward.
+export interface ColonyPolicy {
+  rationing: "generous" | "standard" | "strict";
+  birthPolicy: "encouraged" | "neutral" | "restricted";
+  laborPriority: "food" | "industry" | "construction" | "learning" | "balanced";
+  expeditions: "aggressive" | "normal" | "cautious";
+}
+
+export interface Tradition {
+  id: string;
+  name: string;
+  description: string;
+  kind: "holiday" | "ritual" | "myth" | "custom" | "art";
+  foundedDay: number;
+  originEventId: string;
+}
+
 export interface Building {
   id: string;
   type:
@@ -173,6 +191,9 @@ export interface Building {
   z: number;
   condition: number; // 0-100
   staffedBy: string[]; // colonist ids
+  label: string;
+  builtByName?: string; // lead builder at the time, for provenance generations later
+  builtByIds?: string[];
 }
 
 export interface HistoryEvent {
@@ -254,6 +275,8 @@ export interface SimState {
   tech: TechLevel;
   landed: boolean;
   holidays: { name: string; day: number; recurring: boolean; originEventId: string }[];
+  traditions: Tradition[];
+  policy: ColonyPolicy;
   generationsBornOffworld: number;
   lastEarthMemoryHolderDeathDay?: number;
 }

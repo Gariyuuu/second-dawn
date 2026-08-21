@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { Rand } from "@/lib/sim/rng";
 import { createInitialState, tick, simulateDays } from "@/lib/sim/engine";
-import type { SimState } from "@/lib/sim/types";
+import type { ColonyPolicy, SimState } from "@/lib/sim/types";
 
 export type TimeSpeed = 0 | 1 | 10 | 100;
 export type PlayerMode = "observer" | "director" | "colonist" | "god";
@@ -13,11 +13,14 @@ interface SimStore {
   speed: TimeSpeed;
   mode: PlayerMode;
   selectedColonistId: string | null;
+  selectedBuildingId: string | null;
   followColonistId: string | null; // for individual-colonist mode
   version: number; // bumped each tick so React re-renders without deep-cloning sim
   setSpeed: (s: TimeSpeed) => void;
   setMode: (m: PlayerMode) => void;
   selectColonist: (id: string | null) => void;
+  selectBuilding: (id: string | null) => void;
+  setPolicy: <K extends keyof ColonyPolicy>(key: K, value: ColonyPolicy[K]) => void;
   stepDays: (days: number) => void;
   skipYears: (years: number) => void;
   reset: (seed?: number) => void;
@@ -34,12 +37,20 @@ export const useSimStore = create<SimStore>((set, get) => ({
   speed: 0,
   mode: "observer",
   selectedColonistId: null,
+  selectedBuildingId: null,
   followColonistId: null,
   version: 0,
 
   setSpeed: (speed) => set({ speed }),
   setMode: (mode) => set({ mode }),
-  selectColonist: (id) => set({ selectedColonistId: id }),
+  selectColonist: (id) => set({ selectedColonistId: id, selectedBuildingId: null }),
+  selectBuilding: (id) => set({ selectedBuildingId: id, selectedColonistId: null }),
+
+  setPolicy: (key, value) => {
+    const { sim } = get();
+    sim.policy = { ...sim.policy, [key]: value };
+    set((st) => ({ version: st.version + 1 }));
+  },
 
   stepDays: (days) => {
     const { sim, rand } = get();
@@ -61,6 +72,7 @@ export const useSimStore = create<SimStore>((set, get) => ({
       speed: 0,
       version: 0,
       selectedColonistId: null,
+      selectedBuildingId: null,
       followColonistId: null,
     });
   },

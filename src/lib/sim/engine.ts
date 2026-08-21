@@ -1,6 +1,7 @@
 import { Rand } from "./rng";
 import { generatePopulation, generateColonist } from "./colonistGen";
 import { generatePlanet, generateEcology } from "./planetGen";
+import { generateOffworldName } from "./names";
 import type {
   Building,
   Colonist,
@@ -9,6 +10,7 @@ import type {
   SettlementStage,
   SimState,
   Skill,
+  Tradition,
 } from "./types";
 
 let eventCounter = 0;
@@ -43,7 +45,17 @@ export function createInitialState(seed: number): SimState {
   };
 
   const initialBuildings: Building[] = [
-    { id: "b-lander", type: "habitat_module", builtDay: 0, x: 0, z: 0, condition: 100, staffedBy: [] },
+    {
+      id: "b-lander",
+      type: "habitat_module",
+      label: "Descent Lander",
+      builtDay: 0,
+      x: 0,
+      z: 0,
+      condition: 100,
+      staffedBy: [],
+      builtByName: "Built on Earth; flown down on Landing Day",
+    },
   ];
 
   const commander =
@@ -88,6 +100,13 @@ export function createInitialState(seed: number): SimState {
     tech: { manufacturing: 70, medicine: 75, agriculture: 60, energy: 72, construction: 68 },
     landed: true,
     holidays: [],
+    traditions: [],
+    policy: {
+      rationing: "standard",
+      birthPolicy: "neutral",
+      laborPriority: "balanced",
+      expeditions: "normal",
+    },
     generationsBornOffworld: 0,
   };
   return state;
@@ -99,8 +118,22 @@ function alive(state: SimState) {
   return state.colonists.filter((c) => c.alive);
 }
 
-function skillTotal(state: SimState, skill: Skill): number {
-  return alive(state).reduce((s, c) => s + (c.skills[skill] ?? 0), 0);
+// Skill totals are read many times per tick; computing them once per day and
+// reading from this cache is what makes century-scale runs practical.
+let skillCache: Partial<Record<Skill, number>> = {};
+function buildSkillCache(living: Colonist[]) {
+  const cache: Partial<Record<Skill, number>> = {};
+  for (const c of living) {
+    for (const key in c.skills) {
+      const s = key as Skill;
+      cache[s] = (cache[s] ?? 0) + (c.skills[s] ?? 0);
+    }
+  }
+  skillCache = cache;
+}
+
+function skillTotal(_state: SimState, skill: Skill): number {
+  return skillCache[skill] ?? 0;
 }
 
 function bestAt(state: SimState, skill: Skill): Colonist | undefined {
@@ -172,6 +205,16 @@ export function tick(state: SimState, rand: Rand): SimState {
   const living = alive(s);
   const pop = living.length;
   if (pop === 0) return s;
+  buildSkillCache(living);
+
+  // --- director policy multipliers ---
+  const pol = s.policy;
+  const rationMult = pol.rationing === "strict" ? 0.78 : pol.rationing === "generous" ? 1.2 : 1;
+  const rationMorale = pol.rationing === "strict" ? -0.14 : pol.rationing === "generous" ? 0.12 : 0;
+  const farmFocus = pol.laborPriority === "food" ? 1.3 : pol.laborPriority === "balanced" ? 1 : 0.85;
+  const industryFocus = pol.laborPriority === "industry" ? 1.35 : pol.laborPriority === "balanced" ? 1 : 0.85;
+  const buildFocus = pol.laborPriority === "construction" ? 1.6 : pol.laborPriority === "balanced" ? 1 : 0.8;
+  const learnFocus = pol.laborPriority === "learning" ? 2.2 : pol.laborPriority === "balanced" ? 1 : 0.7;
 
   // --- energy production/consumption ---
   const powerStations = s.buildings.filter((b) => b.type === "power_station" && b.condition > 20).length;
@@ -196,13 +239,13 @@ export function tick(state: SimState, rand: Rand): SimState {
   const soilMult = s.planet.soilFertility === "rich" ? 1.3 : s.planet.soilFertility === "moderate" ? 1.0 : 0.7;
   let foodProduced = 0;
   if (farms > 0 && s.resources.seeds > 0) {
-    foodProduced = farms * (100 + agSkill / 8) * soilMult * (0.5 + s.tech.agriculture / 200);
+    foodProduced = farms * (100 + agSkill / 8) * soilMult * (0.5 + s.tech.agriculture / 200) * farmFocus;
     if (powerCrisis) foodProduced *= 0.4; // greenhouses still get sunlight, but pumps and heaters are down
     s.resources.seeds = Math.max(0, s.resources.seeds - farms * 0.05);
     // farms regenerate a little seed stock
     s.resources.seeds = Math.min(2000, s.resources.seeds + farms * 0.08);
   }
-  const foodNeeded = pop * 1.0;
+  const foodNeeded = pop * 1.0 * rationMult;
   s.resources.food = Math.min(60000, s.resources.food + foodProduced - foodNeeded);
   const famine = s.resources.food < 0;
   if (famine) s.resources.food = 0;
@@ -212,17 +255,20 @@ export function tick(state: SimState, rand: Rand): SimState {
   const refineries = s.buildings.filter((b) => b.type === "refinery" && b.condition > 20).length;
   const workshops = s.buildings.filter((b) => b.type === "workshop" && b.condition > 20).length;
   if (mines > 0 && !powerCrisis) {
-    s.resources.rawMaterials += mines * 25 * (skillTotal(s, "geology") / 400 + 0.5);
+    s.resources.rawMaterials += mines * 25 * (skillTotal(s, "geology") / 400 + 0.5) * industryFocus;
   }
   if (refineries > 0 && s.resources.rawMaterials > 5 && !powerCrisis) {
-    const processed = Math.min(s.resources.rawMaterials, refineries * 20);
+    const processed = Math.min(s.resources.rawMaterials, refineries * 20 * industryFocus);
     s.resources.rawMaterials -= processed;
     s.resources.materials += processed * 0.7;
   }
   // workshops leave a construction reserve of materials untouched
   if (workshops > 0 && s.resources.materials > 130 && !powerCrisis) {
     const fabSkill = skillTotal(s, "fabrication");
-    const crafted = Math.min((s.resources.materials - 130) * 0.3, workshops * (6 + fabSkill / 200) * (s.tech.manufacturing / 100));
+    const crafted = Math.min(
+      (s.resources.materials - 130) * 0.3,
+      workshops * (6 + fabSkill / 200) * (s.tech.manufacturing / 100) * industryFocus
+    );
     s.resources.materials -= crafted;
     s.resources.components += crafted * 0.6;
     s.resources.spareParts += crafted * 0.25;
@@ -272,20 +318,27 @@ export function tick(state: SimState, rand: Rand): SimState {
   ) {
     const conSkill = skillTotal(s, "construction");
     // construction takes time: probability per day scales with construction skill; power outages slow it
-    const buildP = Math.min(0.25, conSkill / 8000 + 0.02) * (powerCrisis ? 0.5 : 1);
+    const buildP = Math.min(0.4, (conSkill / 8000 + 0.02) * buildFocus) * (powerCrisis ? 0.5 : 1);
     if (rand.bool(buildP)) {
       s.resources.materials -= nextBuild.materials;
       s.resources.components -= nextBuild.components;
       const angle = rand.float(0, Math.PI * 2);
       const dist = 6 + s.buildings.length * 2.2 + rand.float(0, 4);
+      const crew = living
+        .filter((c) => (c.skills.construction ?? 0) > 20)
+        .sort((a, b) => (b.skills.construction ?? 0) - (a.skills.construction ?? 0))
+        .slice(0, 4);
       s.buildings.push({
         id: `b-${day}-${s.buildings.length}`,
         type: nextBuild.type,
+        label: nextBuild.label,
         builtDay: day,
         x: Math.cos(angle) * dist,
         z: Math.sin(angle) * dist,
         condition: 100,
         staffedBy: [],
+        builtByName: crew[0]?.name,
+        builtByIds: crew.map((c) => c.id),
       });
       s.history.push(
         makeEvent(day, `${nextBuild.label} completed`, `Construction crews finished the ${nextBuild.label.toLowerCase()} on day ${day}.`, "construction")
@@ -313,7 +366,7 @@ export function tick(state: SimState, rand: Rand): SimState {
 
   // --- morale & mental health ---
   for (const c of living) {
-    let delta = 0;
+    let delta = rationMorale;
     if (famine) delta -= 1.5;
     if (powerCrisis) delta -= 0.8;
     if (waterCrisis) delta -= 1.2;
@@ -323,6 +376,9 @@ export function tick(state: SimState, rand: Rand): SimState {
     const friendCount = c.relationships.filter((r) => r.kind === "friend" || r.kind === "spouse").length;
     delta += Math.min(0.2, friendCount * 0.04);
     if (c.personality.includes("reclusive")) delta += 0.05; // isolation bothers them less
+    // People adapt: morale settles at a level conditions justify rather than
+    // drifting to an absolute floor or ceiling over decades.
+    delta += (55 - c.morale) * 0.004;
     c.morale = Math.max(0, Math.min(100, c.morale + delta));
     c.health.mental = Math.max(0, Math.min(100, c.health.mental + delta * 0.4));
   }
@@ -369,7 +425,8 @@ export function tick(state: SimState, rand: Rand): SimState {
     const spouse = s.colonists.find((x) => x.id === spouseRel.colonistId);
     if (!spouse?.alive) continue;
     const settled = s.settlementStage !== "landing_camp";
-    const baseP = settled ? 0.0011 : 0.0004; // births rare in the desperate first phase
+    let baseP = settled ? 0.0011 : 0.0004; // births rare in the desperate first phase
+    baseP *= pol.birthPolicy === "encouraged" ? 1.7 : pol.birthPolicy === "restricted" ? 0.35 : 1;
     if (c.morale > 40 && !famine && rand.bool(baseP)) {
       c.health.pregnant = true;
       c.health.pregnancyDueDay = day + 266;
@@ -391,9 +448,14 @@ export function tick(state: SimState, rand: Rand): SimState {
       baby.fears = [];
       baby.health = { physical: rand.int(80, 100), mental: 80, chronicConditions: [], injured: false };
       baby.morale = 70;
-      // inherit surname + culture from parents
+      // Naming drifts across generations: Earth first-names give way to ones
+      // coined here, while the family surname still carries down.
       const motherSurname = c.name.split(" ").slice(-1)[0];
-      baby.name = `${baby.name.split(" ")[0]} ${motherSurname}`;
+      const earthBornShare = living.filter((x) => x.bornOnEarth).length / Math.max(1, living.length);
+      const driftChance = 1 - earthBornShare; // the fewer Earth-born adults, the more local the names
+      baby.name = rand.bool(driftChance * 0.85)
+        ? generateOffworldName(baby.sex, (arr) => rand.pick(arr), motherSurname)
+        : `${baby.name.split(" ")[0]} ${motherSurname}`;
       baby.ideology = rand.bool(0.6) ? c.ideology : baby.ideology;
       baby.relationships = [{ colonistId: c.id, kind: "parent" }];
       c.relationships.push({ colonistId: baby.id, kind: "child" });
@@ -450,7 +512,8 @@ export function tick(state: SimState, rand: Rand): SimState {
       const teachable = (Object.entries(t.skills) as [Skill, number][]).filter(([, v]) => v > 70);
       if (!teachable.length) continue;
       const [skill] = rand.pick(teachable);
-      student.skills[skill] = Math.min(85, (student.skills[skill] ?? 0) + rand.int(1, 3));
+      const gain = Math.max(1, Math.round(rand.int(1, 3) * learnFocus));
+      student.skills[skill] = Math.min(85, (student.skills[skill] ?? 0) + gain);
     }
   }
 
@@ -546,8 +609,14 @@ export function tick(state: SimState, rand: Rand): SimState {
     );
   }
 
+  // --- culture: traditions crystallize out of history the colony actually lived ---
+  if (day % 90 === 0) {
+    evolveCulture(s, rand, day);
+  }
+
   // --- expeditions ---
-  if (day % 60 === 0 && rand.bool(0.4) && pop > 40) {
+  const expP = pol.expeditions === "aggressive" ? 0.8 : pol.expeditions === "cautious" ? 0.15 : 0.4;
+  if (day % 60 === 0 && rand.bool(expP) && pop > 40) {
     launchExpedition(s, rand, day);
   }
   for (const exp of s.expeditions) {
@@ -629,6 +698,132 @@ function describeSkillLoss(s: SimState, dead: Colonist): string {
     return `Only ${remaining} colonist${remaining === 1 ? "" : "s"} with real ${skill} expertise remain.`;
   }
   return "";
+}
+
+// Traditions are never scheduled — each one requires a specific thing to have
+// happened, and enough time to have passed for people to have made meaning of it.
+function evolveCulture(s: SimState, rand: Rand, day: number) {
+  const has = (id: string) => s.traditions.some((t) => t.id === id);
+  const add = (
+    id: string,
+    name: string,
+    description: string,
+    kind: Tradition["kind"],
+    originEventId: string
+  ) => {
+    s.traditions.push({ id, name, description, kind, foundedDay: day, originEventId });
+    s.history.push(
+      makeEvent(day, `A Tradition Takes Hold: ${name}`, description, "culture")
+    );
+  };
+
+  const yearLen = s.planet.yearLengthDays;
+  const living = alive(s);
+
+  // A famine survived, two years on, becomes a fast rather than a wound.
+  const famines = s.history.filter((h) => h.title === "Food Shortage");
+  if (!has("t-lean-fast") && famines.length >= 3) {
+    const oldest = famines[0];
+    if (day - oldest.day > yearLen * 2 && !recentEvent(s, "Food Shortage", yearLen)) {
+      add(
+        "t-lean-fast",
+        "The Lean Days",
+        `Each year the colony marks the season it nearly starved by eating at ration weight for three days. Begun by those who remembered the shortages around day ${oldest.day}.`,
+        "ritual",
+        oldest.id
+      );
+    }
+  }
+
+  // Lost expeditions become a memorial for the people the horizon kept.
+  const lost = s.history.filter((h) => h.title === "Expedition Lost");
+  if (!has("t-horizon-vigil") && lost.length >= 2 && day - lost[0].day > yearLen) {
+    add(
+      "t-horizon-vigil",
+      "The Horizon Vigil",
+      `A night kept for survey teams that never came back. Lamps are set facing outward from the settlement edge, one for each name.`,
+      "ritual",
+      lost[0].id
+    );
+  }
+
+  // The first birth founds a naming custom.
+  const firstBirth = s.history.find((h) => h.title === "First Birth");
+  if (!has("t-first-name") && firstBirth && day - firstBirth.day > yearLen * 2) {
+    add(
+      "t-first-name",
+      "Naming at the Threshold",
+      `Children born here are named at the lander's hatch rather than indoors — a custom traced to the birth of ${firstBirth.description.split(" ")[0]} ${firstBirth.description.split(" ")[1] ?? ""}.`.trim(),
+      "custom",
+      firstBirth.id
+    );
+  }
+
+  // Once nobody remembers Earth, Earth stops being a place and becomes a story.
+  const lastMemory = s.history.find((h) => h.title === "The Last Earth Memory");
+  if (!has("t-blue-world") && lastMemory && day - lastMemory.day > yearLen * 3) {
+    add(
+      "t-blue-world",
+      "The Blue World",
+      `Earth has passed out of memory and into story. Children are taught it as a place of blue water and crowded sky — half history, half parable about why the colony must not fail.`,
+      "myth",
+      lastMemory.id
+    );
+  }
+
+  // A constitution that has held for a decade earns a civic day.
+  if (!has("t-charter-day") && s.government.established && s.government.establishedDay !== undefined) {
+    if (day - s.government.establishedDay > yearLen * 10) {
+      add(
+        "t-charter-day",
+        "Charter Day",
+        `The signing of ${s.government.systemName} is marked each year with open debate in the hall — anyone may speak, and by custom the leaders answer last.`,
+        "holiday",
+        s.history.find((h) => h.title === "Constitution Signed")?.id ?? ""
+      );
+    }
+  }
+
+  // A museum plus a generation with no Earth-born members produces a preservation custom.
+  const museumBuilt = s.buildings.find((b) => b.type === "museum");
+  if (!has("t-keeping") && museumBuilt && day - museumBuilt.builtDay > yearLen * 2) {
+    add(
+      "t-keeping",
+      "The Keeping",
+      `Families bring one object a generation to the museum. What is chosen says more about the colony than what is written down.`,
+      "custom",
+      ""
+    );
+  }
+
+  // Once the settlement is permanent and skilled, art appears in its own right.
+  if (
+    !has("t-ridge-figures") &&
+    s.settlementStage !== "landing_camp" &&
+    s.settlementStage !== "modular_settlement" &&
+    living.length > 150 &&
+    day > yearLen * 20
+  ) {
+    add(
+      "t-ridge-figures",
+      "Ridge Figures",
+      `Colonists cut large figures into the pale rock above the settlement — first as survey markers, now as something between signature and prayer.`,
+      "art",
+      ""
+    );
+  }
+
+  // Language drifts once most speakers were born here.
+  const offworldBorn = living.filter((c) => !c.bornOnEarth).length;
+  if (!has("t-dialect") && living.length > 0 && offworldBorn / living.length > 0.9 && day > yearLen * 40) {
+    add(
+      "t-dialect",
+      "The Settlement Dialect",
+      `Speech here has drifted from the mission's standard: shipboard words survive with new meanings, "downwell" has replaced "outside", and the names of Earth months are now simply the names of local seasons.`,
+      "custom",
+      ""
+    );
+  }
 }
 
 function establishGovernment(s: SimState, rand: Rand, day: number) {
@@ -727,8 +922,11 @@ function launchExpedition(s: SimState, rand: Rand, day: number) {
 }
 
 function resolveExpedition(s: SimState, rand: Rand, exp: SimState["expeditions"][number], day: number) {
+  // aggressive survey pushes further from the settlement and loses more teams
+  const lossChance =
+    s.policy.expeditions === "aggressive" ? 0.14 : s.policy.expeditions === "cautious" ? 0.03 : 0.08;
   const roll = rand.next();
-  if (roll < 0.08) {
+  if (roll < lossChance) {
     // lost
     exp.status = "lost";
     for (const id of exp.memberIds) {

@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useSimStore, type TimeSpeed, type PlayerMode } from "@/store/simStore";
-import type { Colonist, HistoryEvent, ResourceKind } from "@/lib/sim/types";
+import type { Building, Colonist, ColonyPolicy, HistoryEvent, ResourceKind } from "@/lib/sim/types";
 
 const STAGE_LABELS: Record<string, string> = {
   landing_camp: "Landing Camp",
@@ -40,17 +40,20 @@ export default function Hud() {
   const setMode = useSimStore((s) => s.setMode);
   const skipYears = useSimStore((s) => s.skipYears);
   const selectedId = useSimStore((s) => s.selectedColonistId);
+  const selectedBuildingId = useSimStore((s) => s.selectedBuildingId);
   const selectColonist = useSimStore((s) => s.selectColonist);
+  const selectBuilding = useSimStore((s) => s.selectBuilding);
   const killColonist = useSimStore((s) => s.killColonist);
   const grantResources = useSimStore((s) => s.grantResources);
   const reset = useSimStore((s) => s.reset);
   void version;
 
-  const [panel, setPanel] = useState<"history" | "people" | "planet" | "museum" | null>(null);
+  const [panel, setPanel] = useState<"history" | "people" | "planet" | "culture" | "museum" | null>(null);
   const [skipping, setSkipping] = useState(false);
 
   const living = useMemo(() => sim.colonists.filter((c) => c.alive), [sim.colonists, version]);
   const selected = selectedId ? sim.colonists.find((c) => c.id === selectedId) : null;
+  const selectedBuilding = selectedBuildingId ? sim.buildings.find((b) => b.id === selectedBuildingId) : null;
   const yearLen = sim.planet.yearLengthDays;
   const extinct = living.length === 0;
 
@@ -168,7 +171,7 @@ export default function Hud() {
       {/* ── panel + mode buttons ────────────────────────── */}
       <div className="pointer-events-auto mt-2.5 flex gap-1.5 px-3">
         <div className="hud-seg">
-          {(["history", "people", "planet", "museum"] as const).map((p) => (
+          {(["history", "people", "planet", "culture", "museum"] as const).map((p) => (
             <button key={p} onClick={() => setPanel(panel === p ? null : p)} className="hud-btn capitalize" data-on={panel === p}>
               {p}
             </button>
@@ -219,25 +222,40 @@ export default function Hud() {
               {panel === "history" && <HistoryPanel history={sim.history} yearLen={yearLen} />}
               {panel === "people" && <PeoplePanel colonists={sim.colonists} onSelect={selectColonist} />}
               {panel === "planet" && <PlanetPanel />}
+              {panel === "culture" && <CulturePanel yearLen={yearLen} />}
               {panel === "museum" && <MuseumPanel />}
             </div>
           </div>
         )}
         <div className="flex-1" />
-        {/* colonist inspector */}
-        {selected && (
+        {/* inspector: colonist or building */}
+        {(selected || selectedBuilding) && (
           <div className="hud-panel hud-scroll pointer-events-auto m-3 w-[350px] self-start overflow-y-auto p-4" style={{ maxHeight: "70vh" }}>
-            <ColonistCard
-              c={selected}
-              all={sim.colonists}
-              onClose={() => selectColonist(null)}
-              onSelect={selectColonist}
-              godMode={mode === "god"}
-              onKill={() => killColonist(selected.id)}
-            />
+            {selected && (
+              <ColonistCard
+                c={selected}
+                all={sim.colonists}
+                onClose={() => selectColonist(null)}
+                onSelect={selectColonist}
+                godMode={mode === "god"}
+                onKill={() => killColonist(selected.id)}
+              />
+            )}
+            {selectedBuilding && (
+              <BuildingCard
+                b={selectedBuilding}
+                sim={sim}
+                yearLen={yearLen}
+                onClose={() => selectBuilding(null)}
+                onSelect={selectColonist}
+              />
+            )}
           </div>
         )}
       </div>
+
+      {/* ── director policy bar ─────────────────────────── */}
+      {mode === "director" && <DirectorBar />}
 
       {/* ── god mode toolbar ────────────────────────────── */}
       {mode === "god" && (
@@ -275,6 +293,95 @@ export default function Hud() {
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ───────────────────────── director ───────────────────────── */
+
+const POLICY_GROUPS: {
+  key: keyof ColonyPolicy;
+  label: string;
+  options: { value: string; hint: string }[];
+}[] = [
+  {
+    key: "rationing",
+    label: "Rations",
+    options: [
+      { value: "strict", hint: "Stores last longer; morale falls." },
+      { value: "standard", hint: "Full rations, no morale effect." },
+      { value: "generous", hint: "Morale rises; food drains faster." },
+    ],
+  },
+  {
+    key: "birthPolicy",
+    label: "Families",
+    options: [
+      { value: "restricted", hint: "Births discouraged while the colony is fragile." },
+      { value: "neutral", hint: "No colony position on family size." },
+      { value: "encouraged", hint: "Population grows faster; more mouths sooner." },
+    ],
+  },
+  {
+    key: "laborPriority",
+    label: "Labor",
+    options: [
+      { value: "balanced", hint: "No sector favoured." },
+      { value: "food", hint: "Farms prioritized; industry and building slow." },
+      { value: "industry", hint: "Mining, refining and fabrication prioritized." },
+      { value: "construction", hint: "Crews build faster; production suffers." },
+      { value: "learning", hint: "Teaching intensifies; skills spread, output dips." },
+    ],
+  },
+  {
+    key: "expeditions",
+    label: "Survey",
+    options: [
+      { value: "cautious", hint: "Rare, safer expeditions." },
+      { value: "normal", hint: "Regular survey rotation." },
+      { value: "aggressive", hint: "Frequent expeditions; more teams lost." },
+    ],
+  },
+];
+
+function DirectorBar() {
+  const sim = useSimStore((s) => s.sim);
+  const setPolicy = useSimStore((s) => s.setPolicy);
+  const version = useSimStore((s) => s.version);
+  void version;
+  const [hint, setHint] = useState<string | null>(null);
+
+  return (
+    <div
+      className="pointer-events-auto flex flex-col gap-2 border-t px-4 py-2.5 backdrop-blur"
+      style={{ background: "var(--color-paper-0)", borderColor: "var(--rule)" }}
+    >
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        {POLICY_GROUPS.map((g) => (
+          <div key={g.key} className="flex items-center gap-2">
+            <span className="hud-label w-16 shrink-0">{g.label}</span>
+            <div className="hud-seg">
+              {g.options.map((o) => (
+                <button
+                  key={o.value}
+                  className="hud-btn"
+                  data-on={sim.policy[g.key] === o.value}
+                  onClick={() => setPolicy(g.key, o.value as never)}
+                  onMouseEnter={() => setHint(o.hint)}
+                  onMouseLeave={() => setHint(null)}
+                  onFocus={() => setHint(o.hint)}
+                  onBlur={() => setHint(null)}
+                >
+                  {o.value}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="text-[11.5px]" style={{ color: "var(--color-ink-faint)" }}>
+        {hint ?? "Policies take effect on the next simulated day and compound over generations."}
+      </div>
     </div>
   );
 }
@@ -404,6 +511,102 @@ function PlanetPanel() {
   );
 }
 
+const TRADITION_TINT: Record<string, string> = {
+  holiday: "oklch(80% 0.12 85)",
+  ritual: "oklch(76% 0.10 350)",
+  myth: "oklch(72% 0.11 310)",
+  custom: "oklch(75% 0.10 190)",
+  art: "oklch(74% 0.11 130)",
+};
+
+function CulturePanel({ yearLen }: { yearLen: number }) {
+  const sim = useSimStore((s) => s.sim);
+  const version = useSimStore((s) => s.version);
+  void version;
+  const living = sim.colonists.filter((c) => c.alive);
+  const offworld = living.filter((c) => !c.bornOnEarth).length;
+  const earthBorn = living.length - offworld;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-baseline justify-between">
+          <span className="hud-label">Earth-born living</span>
+          <span className="font-mono text-[12px]" style={{ color: earthBorn === 0 ? "var(--color-danger)" : "var(--color-ink)" }}>
+            {earthBorn}
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between">
+          <span className="hud-label">Born on {sim.planet.name}</span>
+          <span className="font-mono text-[12px]" style={{ color: "var(--color-ink)" }}>
+            {offworld}
+          </span>
+        </div>
+        <div className="hud-meter mt-1">
+          <div style={{ width: `${living.length ? (offworld / living.length) * 100 : 0}%` }} />
+        </div>
+        {earthBorn === 0 && sim.lastEarthMemoryHolderDeathDay !== undefined && (
+          <div className="mt-1 leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
+            Nobody alive remembers Earth. The last person who did died on day{" "}
+            {sim.lastEarthMemoryHolderDeathDay}.
+          </div>
+        )}
+      </div>
+
+      <div className="border-t pt-3" style={{ borderColor: "var(--rule)" }}>
+        <div className="hud-label mb-2" style={{ color: "var(--color-accent)" }}>
+          Traditions
+        </div>
+        {sim.traditions.length === 0 && (
+          <div className="leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
+            No traditions yet. They emerge only from things the colony actually lives through — a famine
+            survived, a team that never came home, a charter that holds.
+          </div>
+        )}
+        <div className="flex flex-col gap-3">
+          {sim.traditions.map((t) => (
+            <div key={t.id} className="border-l-2 pl-3" style={{ borderColor: TRADITION_TINT[t.kind] }}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-semibold" style={{ color: "var(--color-ink)" }}>
+                  {t.name}
+                </span>
+                <span className="hud-chip shrink-0">{t.kind}</span>
+              </div>
+              <div className="mt-0.5 leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
+                {t.description}
+              </div>
+              <div className="mt-0.5 font-mono text-[10.5px]" style={{ color: "var(--color-ink-faint)" }}>
+                took hold {fmtDay(t.foundedDay, yearLen)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {sim.factions.length > 0 && (
+        <div className="border-t pt-3" style={{ borderColor: "var(--rule)" }}>
+          <div className="hud-label mb-2" style={{ color: "var(--color-accent)" }}>
+            Factions
+          </div>
+          <div className="flex flex-col gap-2">
+            {sim.factions.map((f) => {
+              const alive = f.memberIds.filter((id) => sim.colonists.find((c) => c.id === id)?.alive).length;
+              return (
+                <div key={f.id} className="flex items-baseline justify-between gap-2">
+                  <span style={{ color: "var(--color-ink)" }}>{f.name}</span>
+                  <span className="font-mono text-[11px]" style={{ color: "var(--color-ink-faint)" }}>
+                    {f.ideology} · {alive} living
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MuseumPanel() {
   const sim = useSimStore((s) => s.sim);
   const hasMuseum = sim.buildings.some((b) => b.type === "museum");
@@ -427,6 +630,128 @@ function MuseumPanel() {
           </ul>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ───────────────────────── building card ───────────────────────── */
+
+const BUILDING_NAMES: Record<Building["type"], string> = {
+  habitat_module: "Habitat Module",
+  power_station: "Power Station",
+  water_reclaimer: "Water Reclaimer",
+  farm_dome: "Farm Dome",
+  workshop: "Workshop",
+  medbay: "Medical Bay",
+  storage_depot: "Storage Depot",
+  mine: "Mine",
+  refinery: "Refinery",
+  school: "School",
+  hall_of_governance: "Hall of Governance",
+  museum: "Museum",
+  house: "Residential Block",
+  market: "Market",
+};
+
+function BuildingCard({
+  b,
+  sim,
+  yearLen,
+  onClose,
+  onSelect,
+}: {
+  b: Building;
+  sim: ReturnType<typeof useSimStore.getState>["sim"];
+  yearLen: number;
+  onClose: () => void;
+  onSelect: (id: string) => void;
+}) {
+  const ageYears = (sim.day - b.builtDay) / yearLen;
+  const builders = (b.builtByIds ?? [])
+    .map((id) => sim.colonists.find((c) => c.id === id))
+    .filter((c): c is Colonist => !!c);
+  // events recorded while this structure was going up — the era it belongs to
+  const era = sim.history
+    .filter((h) => Math.abs(h.day - b.builtDay) < yearLen && h.category !== "crisis")
+    .slice(0, 4);
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div
+            className="text-[17px] font-semibold tracking-[0.04em]"
+            style={{ fontFamily: "var(--font-display-stack)", color: "var(--color-ink)" }}
+          >
+            {b.label || BUILDING_NAMES[b.type]}
+          </div>
+          <div className="mt-0.5 font-mono text-[11.5px]" style={{ color: "var(--color-ink-muted)" }}>
+            {BUILDING_NAMES[b.type]} · standing {ageYears < 1 ? "under a year" : `${Math.floor(ageYears)} years`}
+          </div>
+        </div>
+        <button onClick={onClose} className="hud-btn" aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="hud-label w-16 shrink-0">Condition</span>
+        <div className="hud-meter w-full">
+          <div
+            style={{
+              width: `${Math.max(0, Math.min(100, b.condition))}%`,
+              background: b.condition < 35 ? "var(--color-danger)" : "var(--color-accent)",
+            }}
+          />
+        </div>
+        <span className="w-8 shrink-0 text-right font-mono text-[11px] tabular-nums" style={{ color: "var(--color-ink-muted)" }}>
+          {Math.round(b.condition)}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1.5 border-t pt-3" style={{ borderColor: "var(--rule)" }}>
+        <div>
+          <span className="hud-label">Raised · </span>
+          <span style={{ color: "var(--color-ink-muted)" }}>{fmtDay(b.builtDay, yearLen)}</span>
+        </div>
+        {builders.length > 0 ? (
+          <div>
+            <span className="hud-label">Crew · </span>
+            {builders.map((c, i) => (
+              <span key={c.id}>
+                {i > 0 && ", "}
+                <RelLink c={c} onSelect={onSelect} />
+              </span>
+            ))}
+          </div>
+        ) : b.builtByName ? (
+          <div>
+            <span className="hud-label">Origin · </span>
+            <span style={{ color: "var(--color-ink-muted)" }}>{b.builtByName}</span>
+          </div>
+        ) : null}
+        {builders.length > 0 && builders.every((c) => !c.alive) && (
+          <div className="leading-relaxed" style={{ color: "var(--color-ink-faint)" }}>
+            Everyone who built this is dead. It has outlived its makers.
+          </div>
+        )}
+      </div>
+
+      {era.length > 0 && (
+        <div className="border-t pt-3" style={{ borderColor: "var(--rule)" }}>
+          <div className="hud-label mb-1.5">Standing when it was raised</div>
+          <div className="flex flex-col gap-1">
+            {era.map((h) => (
+              <div key={h.id} className="text-[12px]" style={{ color: "var(--color-ink-muted)" }}>
+                {h.title}{" "}
+                <span className="font-mono text-[10.5px]" style={{ color: "var(--color-ink-faint)" }}>
+                  {fmtDay(h.day, yearLen)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

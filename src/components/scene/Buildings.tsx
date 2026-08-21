@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import type { Building } from "@/lib/sim/types";
 import { terrainHeight } from "./Terrain";
+import { useSimStore } from "@/store/simStore";
 
 const PANEL = new THREE.Color("#b8bcc2");
 const HULL = new THREE.Color("#8e939b");
@@ -168,10 +169,21 @@ function BuildingMesh({ b, seed }: { b: Building; seed: number }) {
 
 export default function Buildings({ buildings, seed }: { buildings: Building[]; seed: number }) {
   const list = useMemo(() => buildings, [buildings.length, seed]); // re-render when count changes
+  const selectBuilding = useSimStore((s) => s.selectBuilding);
   return (
     <group>
       {list.map((b) => (
-        <BuildingMesh key={b.id} b={b} seed={seed} />
+        <group
+          key={b.id}
+          onClick={(e) => {
+            e.stopPropagation();
+            selectBuilding(b.id);
+          }}
+          onPointerOver={() => (document.body.style.cursor = "pointer")}
+          onPointerOut={() => (document.body.style.cursor = "auto")}
+        >
+          <BuildingMesh b={b} seed={seed} />
+        </group>
       ))}
     </group>
   );
