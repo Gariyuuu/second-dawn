@@ -51,14 +51,25 @@ export function buildKnowledgeContext(living: Colonist[]): KnowledgeContext {
   return { pools, practitioners, teachers, pop: living.length };
 }
 
-/** Unmet demand for each trade, as a positive shortfall count. */
+/**
+ * How badly each trade needs new entrants. A shortfall counts heavily, but even
+ * a fully staffed trade needs replacements as its practitioners age out — so
+ * this never returns empty while anyone is practising anything. A colony that
+ * stopped training the moment it was adequately staffed would lose every trade
+ * to old age within a generation.
+ */
 export function tradeNeeds(ctx: KnowledgeContext): [Skill, number][] {
   const out: [Skill, number][] = [];
   for (const s of ALL_SKILLS) {
     const target = Math.max(1, Math.round(ctx.pop * NEED_PER_CAPITA[s]));
     const have = ctx.practitioners[s] ?? 0;
     const shortfall = target - have;
-    if (shortfall > 0) out.push([s, shortfall]);
+    if (shortfall > 0) {
+      out.push([s, shortfall + 1]);
+    } else if (have > 0) {
+      // replacement demand: thinner trades still attract proportionally more
+      out.push([s, Math.max(0.15, target / (have + 1))]);
+    }
   }
   return out.sort((a, b) => b[1] - a[1]);
 }
