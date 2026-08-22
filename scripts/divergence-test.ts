@@ -17,7 +17,7 @@ function summarize(label: string, s: SimState) {
   console.log(`Tech: mfg ${s.tech.manufacturing.toFixed(1)} med ${s.tech.medicine.toFixed(1)} agr ${s.tech.agriculture.toFixed(1)} nrg ${s.tech.energy.toFixed(1)} con ${s.tech.construction.toFixed(1)}`);
   console.log(`Living engineering skill pool: ${engSkill}`);
   console.log(`Resources: food ${Math.floor(s.resources.food)} energy ${Math.floor(s.resources.energy)} materials ${Math.floor(s.resources.materials)} components ${Math.floor(s.resources.components)}`);
-  console.log(`Museum artifacts: ${s.museum.length} | holidays: ${s.holidays.map((h) => h.name).join(", ") || "none"}`);
+  console.log(`Museum artifacts: ${s.museum.length} | traditions: ${s.traditions.map((t) => t.name).join(", ") || "none"}`);
   console.log(`History events: ${s.history.length}; crises: ${s.history.filter((h) => h.category === "crisis").length}`);
   console.log(`Last 5 events:`);
   for (const h of s.history.slice(-5)) console.log(`  [d${h.day}] ${h.title}`);

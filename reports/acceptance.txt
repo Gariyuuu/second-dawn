@@ -1,0 +1,58 @@
+
+=== 1. DETERMINISM: same seed and policy twice ===
+PASS  determinism
+      two independent 120-year runs of seed 42424242 produced identical canonical state
+
+=== 2. SPEED-INDEPENDENCE: day-by-day vs large fast-forward ===
+PASS  speed-independence
+      1-day stepping, 120-day chunks and a single 19980-day jump all agree
+
+=== 3. INSTITUTIONAL RESILIENCE: kill the best engineer at different eras ===
+      year   2 (schools then: 1) → 100 years later: pop 939 vs control 954, energy tech 100 vs 100
+      year  50 (schools then: 2) → 100 years later: pop 1522 vs control 1695, energy tech 99 vs 99
+      year 150 (schools then: 9) → 100 years later: pop 1772 vs control 1692, energy tech 100 vs 100
+      year 300 (schools then: 10) → 100 years later: pop 1807 vs control 1795, energy tech 100 vs 100
+PASS  institutional resilience
+      losing the lead engineer costs 2% of population when done in year 2, but -1% in year 300 — a mature colony with schools absorbs it better
+
+=== 4. KNOWLEDGE MASS CASUALTY: lose every practitioner of three trades ===
+      removed 92 experts in year 100; practitioners immediately after: medicine=0, engineering=3, agriculture=0
+      a century later: medicine=61, engineering=75, agriculture=122 · population 1749 vs control 1823
+PASS  mass casualty has real consequences
+      the shocked colony ended at 1749 against a control of 1823; 3/3 trades were re-established (archives + schools), the rest stayed lost
+
+=== 5. POLICY PATH DEPENDENCE: same policy applied at different moments ===
+      aggressive survey from year   5 → year 250: population 1842, 153 teams lost
+      aggressive survey from year 150 → year 250: population 1762, 97 teams lost
+PASS  policy is path dependent
+      the identical policy produced 1842 vs 1762 people depending on when it was adopted
+
+=== 6. POLICY REVERSAL: history should still show ===
+      restricted for 120y (pop 28) then encouraged for 80y → 29
+      encouraged the whole 200y → 2153
+PASS  policy reversal carries history
+      the colony that spent its first 120 years restricting births never catches the one that never did (29 vs 2153)
+
+=== 7. EXTINCTION IS POSSIBLE (deliberate mismanagement) ===
+      mismanaged: pop 1898, crises 189d, extinct: false
+      balanced:   pop 1850, crises 0d, extinct: false
+FAIL  bad policy is punished
+      deliberate mismanagement produced a materially worse outcome than the balanced control
+
+=== 8. 500-YEAR COUNTERFACTUAL PAIR ===
+                             engineer lived               engineer died year 2
+      population             1771                         2027
+      settlement             regional_civilization        regional_civilization
+      government             The Founders' Covenant       The Founders' Covenant
+      buildings              200                          226
+      generations            17                           17
+      traditions             The Arrival, The First Yield, Night of the Unreturned, Charter Day, Ridge Figures, The Settlement Dialect, The Keeping, The Drowned Garden First Ground, First Furrow, The Speaking, The Outward Lamps, Ridge Figures, The Settlement Dialect, The Keeping, The Old Water
+      artifacts              48                           58
+      crisis days            0                            0
+      energy tech            100                          100
+PASS  500-year counterfactual diverges
+      one changed death in year 2 produced two recognisably different civilizations five centuries later
+
+======================================================================
+7 passed · 1 failed
+FAIL  bad policy is punished — deliberate mismanagement produced a materially worse outcome than the balanced control

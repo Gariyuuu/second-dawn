@@ -99,6 +99,11 @@ export interface Colonist {
   deathDay?: number;
   deathCause?: string;
   role?: string; // current job assignment, e.g. "Farm Steward"
+  /** 0 = founder (Earth-born). Each generation born here increments it. */
+  generation: number;
+  /** How this person acquired their trade, recorded when they came of age. */
+  trainedVia?: "school" | "parent" | "practitioner" | "archive" | "none";
+  trainedBy?: string;
 }
 
 export type ResourceKind =
@@ -167,6 +172,20 @@ export interface Tradition {
   kind: "holiday" | "ritual" | "myth" | "custom" | "art";
   foundedDay: number;
   originEventId: string;
+  observance: number; // 0-100, how widely it is actually kept right now
+  peakObservance: number;
+  lastRevivedDay?: number;
+  status: "active" | "faded";
+}
+
+export interface Archive {
+  id: string;
+  name: string;
+  kind: "ship_library" | "written_record" | "school_curriculum";
+  createdDay: number;
+  integrity: number; // 0-100; decays when no institution maintains it
+  topics: ("earth_history" | "technical" | "medical" | "colony_history")[];
+  maintainedBy: "school" | "museum" | "none";
 }
 
 export interface Building {
@@ -194,11 +213,25 @@ export interface Building {
   label: string;
   builtByName?: string; // lead builder at the time, for provenance generations later
   builtByIds?: string[];
+  lastRenovatedDay?: number;
+  renovations: number; // full rebuilds after falling derelict
+  renovatedByName?: string;
+  /** Condition-points of fabric made good over this structure's life. Every 100
+   *  points is one building's worth of material replaced piece by piece. */
+  fabricReplaced: number;
+  /** People this structure can shelter. Set explicitly so the descent lander,
+   *  which brought the whole landing party down, can differ from a habitat. */
+  housing?: number;
 }
 
 export interface HistoryEvent {
   id: string;
   day: number;
+  /** 1 = routine, 2 = notable, 3 = defining. Drives what surfaces at century scale. */
+  significance: 1 | 2 | 3;
+  /** Set on aggregated crisis periods so repeated days collapse into one record. */
+  durationDays?: number;
+  endDay?: number;
   title: string;
   description: string;
   category:
@@ -247,6 +280,26 @@ export interface MuseumObject {
   originDay: number;
   provenance: string[]; // chain of custody / history notes
   ownerColonistId?: string;
+  /** Why this object was kept when most possessions were not. */
+  significanceReason: string;
+  significance: number; // higher = more likely to stay on display rather than be archived
+  archived: boolean;
+}
+
+/** A dead colonist reduced to what history and descendants actually need. */
+export interface ArchivedColonist {
+  id: string;
+  name: string;
+  sex: Sex;
+  birthDay: number;
+  deathDay: number;
+  deathCause: string;
+  occupation: Occupation;
+  bornOnEarth: boolean;
+  ageAtDeath: number;
+  parentIds: string[];
+  childIds: string[];
+  topSkill?: { skill: Skill; level: number };
 }
 
 export type TechLevel = {
@@ -274,9 +327,47 @@ export interface SimState {
   museum: MuseumObject[];
   tech: TechLevel;
   landed: boolean;
-  holidays: { name: string; day: number; recurring: boolean; originEventId: string }[];
   traditions: Tradition[];
+  archives: Archive[];
   policy: ColonyPolicy;
+  /** Dead colonists, reduced. Kept out of the per-tick hot path. */
+  dead: ArchivedColonist[];
+  /** Skill pools from the most recent tick, for systems that need them cheaply. */
+  knowledgeCtxPool: Partial<Record<Skill, number>>;
+  /**
+   * The physical limits of the territory the colony has actually surveyed.
+   * Ore is finite and depletes as it is mined; farmable ground is finite too.
+   * Both grow only by sending expeditions out to find more, which is what makes
+   * survey policy a real strategic choice and stops growth being unbounded.
+   */
+  resourceBase: {
+    oreKnown: number;
+    oreRemaining: number;
+    arableSites: number;
+    arableUsed: number;
+    depositsFound: number;
+    valleysFound: number;
+  };
+  /** Running totals that would otherwise require scanning all of history. */
+  stats: {
+    births: number;
+    deaths: number;
+    peakPopulation: number;
+    foodCrisisDays: number;
+    powerCrisisDays: number;
+    waterCrisisDays: number;
+    housingShortfallDays: number;
+    techRegressions: number;
+    expeditionsLaunched: number;
+    expeditionsLost: number;
+    buildingsReplaced: number;
+  };
+  worstMortalityYear?: { endDay: number; share: number; deaths: number };
+  /** Rolling per-year mortality accumulator. */
+  yearMortality: { yearStartDay: number; deaths: number; startPop: number };
+  births: number;
   generationsBornOffworld: number;
+  maxAncestryDepth: number;
   lastEarthMemoryHolderDeathDay?: number;
+  extinctDay?: number;
 }

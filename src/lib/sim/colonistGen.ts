@@ -157,6 +157,7 @@ export function generateColonist(rand: Rand, index: number, landingDay: number):
     fears: rand.shuffle(FEAR_POOL).slice(0, rand.int(1, 2)),
     morale: rand.int(50, 85),
     alive: true,
+    generation: 0,
   };
 }
 

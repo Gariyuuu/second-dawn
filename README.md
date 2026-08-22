@@ -57,6 +57,30 @@ npm run dev
 
 Next.js + TypeScript + Three.js (react-three-fiber) + Zustand. Simulation core is pure TypeScript (`src/lib/sim/`), deterministic per seed, and runs headless in Node for testing.
 
+## Multi-century validation
+
+The simulation is validated to Year 500, not Year 100. `scripts/` contains the harness:
+
+```
+npx tsx scripts/sweep.ts --seeds 100 --years 200 --out reports/y200.json
+npx tsx scripts/analyze.ts y200        # statistical sanity + suspicious-convergence flags
+npx tsx scripts/acceptance.ts          # determinism, speed-independence, resilience, counterfactual
+npx tsx scripts/citizen-test.ts        # the Year-500 random-citizen interview
+npx tsx scripts/probe500.ts            # subsystem health at 25/50/100/200/300/500
+```
+
+Long-horizon testing found and fixed several compounding defects that a 100-year run never surfaced:
+
+| Defect found at century scale | Root cause | Fix |
+| --- | --- | --- |
+| Every trade forgotten by Y160; colony extinct | Children learned from a *random* adult; if that adult was unskilled they learned nothing, so the unskilled share compounded | Apprenticeship: youths are matched to living practitioners in trades the colony is short of, by a school where one exists, otherwise by parents |
+| Medicine drained to zero and never returned | Medicine was consumed but never produced | Medbay + doctors + materials manufacture it, against a target set by population |
+| All 189 buildings collapsed within five years | Maintenance over-repaired ~17× actual decay, exhausting spare parts, and every building decayed in lockstep | Repair is a budget matched to wear; wear rate varies by building type |
+| Colony froze at 21 buildings for 400 years | The top-priority build was permanently unaffordable and the planner considered nothing else | Planner builds the most pressing thing it can actually pay for |
+| Population grew without limit | Mining created ore from nothing, so there was no resource ceiling | Finite depletable deposits and finite farmland, expanded only by exploration; plus an ordinary demographic transition |
+| Every colony reached identical outcomes | Generated planet hazards were never simulated, and hydrosphere was unused | Storms, floods, quakes, UV summers and algal blooms actually strike; water yield scales with hydrosphere |
+| Technology maxed at 100 everywhere | Tech tracked *absolute* skill totals, which saturate in any large colony | Tech tracks practitioner density and mastery *per capita*, so a growing society can lose ground |
+
 ## Honest scope notes
 
 This is a vertical slice of the full vision. Colonists render as instanced low-poly figures — premium character and environment assets are a planned upgrade, not present. The tick is a uniform daily step with no level-of-detail coarsening; caching skill totals brought 100 years down to about 5 seconds, so centuries are practical, but millennia would need real LOD. Architecture styles don't yet change with era, class/prestige/religion dynamics are shallow, and Colonist mode does not yet follow an individual through their life.

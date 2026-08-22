@@ -2,6 +2,8 @@
 import { useMemo, useState } from "react";
 import { useSimStore, type TimeSpeed, type PlayerMode } from "@/store/simStore";
 import type { Building, Colonist, ColonyPolicy, HistoryEvent, ResourceKind } from "@/lib/sim/types";
+import { findPerson, type PersonView } from "@/lib/sim/lookup";
+import { earthKnowledge } from "@/lib/sim/knowledge";
 
 const STAGE_LABELS: Record<string, string> = {
   landing_camp: "Landing Camp",
@@ -220,7 +222,7 @@ export default function Hud() {
             </div>
             <div className="hud-scroll flex-1 overflow-y-auto p-4">
               {panel === "history" && <HistoryPanel history={sim.history} yearLen={yearLen} />}
-              {panel === "people" && <PeoplePanel colonists={sim.colonists} onSelect={selectColonist} />}
+              {panel === "people" && <PeoplePanel onSelect={selectColonist} yearLen={yearLen} />}
               {panel === "planet" && <PlanetPanel />}
               {panel === "culture" && <CulturePanel yearLen={yearLen} />}
               {panel === "museum" && <MuseumPanel />}
@@ -388,10 +390,32 @@ function DirectorBar() {
 
 /* ───────────────────────── panels ───────────────────────── */
 
+const SIG_LABEL = ["", "routine", "notable", "defining"];
+
 function HistoryPanel({ history, yearLen }: { history: HistoryEvent[]; yearLen: number }) {
+  // Five centuries produce far more events than anyone can scroll. Filter by
+  // significance and page through, rather than mounting the whole record.
+  const [minSig, setMinSig] = useState<1 | 2 | 3>(2);
+  const [limit, setLimit] = useState(60);
+  const filtered = useMemo(
+    () => history.filter((h) => h.significance >= minSig).reverse(),
+    [history, minSig, history.length]
+  );
+  const shown = filtered.slice(0, limit);
+
   return (
     <div className="flex flex-col gap-3">
-      {[...history].reverse().map((h) => (
+      <div className="hud-seg self-start">
+        {([3, 2, 1] as const).map((s) => (
+          <button key={s} onClick={() => { setMinSig(s); setLimit(60); }} className="hud-btn" data-on={minSig === s}>
+            {s === 3 ? "defining" : s === 2 ? "notable" : "all"}
+          </button>
+        ))}
+      </div>
+      <div className="hud-label">
+        {filtered.length.toLocaleString()} events at this level · showing {shown.length}
+      </div>
+      {shown.map((h) => (
         <div key={h.id} className="border-l-2 pl-3" style={{ borderColor: CATEGORY_COLORS[h.category] }}>
           <div className="flex items-baseline justify-between gap-2">
             <span className="font-semibold" style={{ color: "var(--color-ink)" }}>
@@ -399,50 +423,96 @@ function HistoryPanel({ history, yearLen }: { history: HistoryEvent[]; yearLen: 
             </span>
             <span className="shrink-0 font-mono text-[10.5px] tabular-nums" style={{ color: "var(--color-ink-faint)" }}>
               {fmtDay(h.day, yearLen)}
+              {h.durationDays && h.durationDays > 1 ? ` · ${h.durationDays}d` : ""}
             </span>
           </div>
           <div className="mt-0.5 leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
             {h.description}
           </div>
+          {h.significance === 3 && (
+            <div className="hud-label mt-0.5" style={{ color: "var(--color-accent)" }}>
+              {SIG_LABEL[h.significance]}
+            </div>
+          )}
         </div>
       ))}
+      {shown.length < filtered.length && (
+        <button onClick={() => setLimit((l) => l + 120)} className="hud-btn self-start">
+          Load 120 more
+        </button>
+      )}
     </div>
   );
 }
 
-function PeoplePanel({ colonists, onSelect }: { colonists: Colonist[]; onSelect: (id: string) => void }) {
+function PeoplePanel({ onSelect, yearLen }: { onSelect: (id: string) => void; yearLen: number }) {
+  const sim = useSimStore((s) => s.sim);
+  const version = useSimStore((s) => s.version);
+  void version;
   const [showDead, setShowDead] = useState(false);
-  const living = colonists.filter((c) => c.alive);
-  const dead = colonists.filter((c) => !c.alive);
-  const list = showDead ? dead : living;
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(120);
+
+  const living = sim.colonists;
+  const dead = sim.dead;
+  const q = query.trim().toLowerCase();
+
+  // The dead outnumber the living many times over by Year 500, so both lists are
+  // filtered and paged rather than rendered whole.
+  const rows = useMemo(() => {
+    if (showDead) {
+      const src = q ? dead.filter((d) => d.name.toLowerCase().includes(q)) : dead;
+      return src.slice(-limit).reverse().map((d) => ({
+        id: d.id, name: d.name, alive: false,
+        meta: `${Math.floor(d.ageAtDeath)}y · ${d.occupation} · † ${d.deathCause} · ${fmtDay(d.deathDay, yearLen)}`,
+      }));
+    }
+    const src = q ? living.filter((c) => c.name.toLowerCase().includes(q)) : living;
+    return src.slice(0, limit).map((c) => ({
+      id: c.id, name: c.name, alive: true,
+      meta: `${Math.floor(c.ageYears)}y · ${c.occupation}${c.bornOnEarth ? " · Earth-born" : ` · gen ${c.generation}`}`,
+    }));
+  }, [showDead, q, limit, living, dead, version, yearLen]);
+
+  const total = showDead ? dead.length : living.length;
+
   return (
     <div>
-      <div className="hud-seg mb-3">
-        <button onClick={() => setShowDead(false)} className="hud-btn" data-on={!showDead}>
-          Living · {living.length}
+      <div className="hud-seg mb-2">
+        <button onClick={() => { setShowDead(false); setLimit(120); }} className="hud-btn" data-on={!showDead}>
+          Living · {living.length.toLocaleString()}
         </button>
-        <button onClick={() => setShowDead(true)} className="hud-btn" data-on={showDead}>
-          Dead · {dead.length}
+        <button onClick={() => { setShowDead(true); setLimit(120); }} className="hud-btn" data-on={showDead}>
+          Dead · {dead.length.toLocaleString()}
         </button>
       </div>
+      <input
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setLimit(120); }}
+        placeholder="search by name"
+        className="mb-2 w-full rounded-md border px-2 py-1.5 font-mono text-[12px] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-focus)]"
+        style={{ background: "var(--color-paper-2)", borderColor: "var(--rule)", color: "var(--color-ink)" }}
+      />
+      <div className="hud-label mb-1">
+        showing {rows.length} of {total.toLocaleString()}
+      </div>
       <div className="flex flex-col">
-        {list.slice(0, 400).map((c) => (
+        {rows.map((r) => (
           <button
-            key={c.id}
-            onClick={() => onSelect(c.id)}
+            key={r.id}
+            onClick={() => onSelect(r.id)}
             className="rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[var(--color-paper-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-focus)]"
           >
-            <span style={{ color: c.alive ? "var(--color-ink)" : "var(--color-ink-faint)", textDecoration: c.alive ? "none" : "line-through" }}>
-              {c.name}
-            </span>{" "}
-            <span className="font-mono text-[11px]" style={{ color: "var(--color-ink-faint)" }}>
-              {Math.floor(c.ageYears)}y · {c.occupation}
-              {!c.bornOnEarth && " · offworld"}
-              {!c.alive && c.deathCause ? ` · † ${c.deathCause}` : ""}
-            </span>
+            <span style={{ color: r.alive ? "var(--color-ink)" : "var(--color-ink-faint)" }}>{r.name}</span>{" "}
+            <span className="font-mono text-[11px]" style={{ color: "var(--color-ink-faint)" }}>{r.meta}</span>
           </button>
         ))}
       </div>
+      {rows.length < total && (
+        <button onClick={() => setLimit((l) => l + 200)} className="hud-btn mt-2 self-start">
+          Load 200 more
+        </button>
+      )}
     </div>
   );
 }
@@ -563,24 +633,52 @@ function CulturePanel({ yearLen }: { yearLen: number }) {
             survived, a team that never came home, a charter that holds.
           </div>
         )}
-        <div className="flex flex-col gap-3">
-          {sim.traditions.map((t) => (
-            <div key={t.id} className="border-l-2 pl-3" style={{ borderColor: TRADITION_TINT[t.kind] }}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-semibold" style={{ color: "var(--color-ink)" }}>
-                  {t.name}
-                </span>
-                <span className="hud-chip shrink-0">{t.kind}</span>
+        {(["active", "faded"] as const).map((status) => {
+          const list = sim.traditions.filter((t) => t.status === status);
+          if (!list.length) return null;
+          return (
+            <div key={status} className="mb-3">
+              <div className="hud-label mb-1.5">
+                {status === "active" ? "Kept today" : "No longer kept"}
               </div>
-              <div className="mt-0.5 leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
-                {t.description}
-              </div>
-              <div className="mt-0.5 font-mono text-[10.5px]" style={{ color: "var(--color-ink-faint)" }}>
-                took hold {fmtDay(t.foundedDay, yearLen)}
+              <div className="flex flex-col gap-3">
+                {list.map((t) => (
+                  <div
+                    key={t.id}
+                    className="border-l-2 pl-3"
+                    style={{ borderColor: TRADITION_TINT[t.kind], opacity: status === "faded" ? 0.55 : 1 }}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-semibold" style={{ color: "var(--color-ink)" }}>
+                        {t.name}
+                      </span>
+                      <span className="hud-chip shrink-0">{t.kind}</span>
+                    </div>
+                    <div className="mt-0.5 leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
+                      {t.description}
+                    </div>
+                    {status === "active" && (
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="hud-label">observance</span>
+                        <div className="hud-meter flex-1">
+                          <div style={{ width: `${t.observance}%` }} />
+                        </div>
+                        <span className="font-mono text-[10.5px] tabular-nums" style={{ color: "var(--color-ink-faint)" }}>
+                          {Math.round(t.observance)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="mt-0.5 font-mono text-[10.5px]" style={{ color: "var(--color-ink-faint)" }}>
+                      took hold {fmtDay(t.foundedDay, yearLen)}
+                      {t.lastRevivedDay ? ` · revived ${fmtDay(t.lastRevivedDay, yearLen)}` : ""}
+                      {status === "faded" ? ` · peaked at ${Math.round(t.peakObservance)}` : ""}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {sim.factions.length > 0 && (
@@ -609,19 +707,37 @@ function CulturePanel({ yearLen }: { yearLen: number }) {
 
 function MuseumPanel() {
   const sim = useSimStore((s) => s.sim);
-  const hasMuseum = sim.buildings.some((b) => b.type === "museum");
+  const version = useSimStore((s) => s.version);
+  void version;
+  const [showArchived, setShowArchived] = useState(false);
+  const [limit, setLimit] = useState(30);
+  const hasMuseum = sim.buildings.some((b) => b.type === "museum" && b.condition > 25);
+  const list = sim.museum.filter((m) => m.archived === showArchived);
+  const shown = [...list].sort((a, b) => b.significance - a.significance).slice(0, limit);
+
   return (
     <div className="flex flex-col gap-3">
       {!hasMuseum && (
         <div className="leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
-          No museum building exists yet — these artifacts wait in storage for a civilization that wants to
+          No museum stands right now — these objects wait in storage for a civilization with the room to
           remember.
         </div>
       )}
-      {sim.museum.map((m) => (
+      <div className="hud-seg self-start">
+        <button onClick={() => { setShowArchived(false); setLimit(30); }} className="hud-btn" data-on={!showArchived}>
+          On display · {sim.museum.filter((m) => !m.archived).length}
+        </button>
+        <button onClick={() => { setShowArchived(true); setLimit(30); }} className="hud-btn" data-on={showArchived}>
+          In storage · {sim.museum.filter((m) => m.archived).length}
+        </button>
+      </div>
+      {shown.map((m) => (
         <div key={m.id} className="rounded-lg border p-3" style={{ borderColor: "var(--rule)", background: "var(--color-paper-2)" }}>
           <div className="font-semibold" style={{ color: "var(--color-accent)" }}>
             {m.name}
+          </div>
+          <div className="mt-0.5 text-[11.5px]" style={{ color: "var(--color-ink-faint)" }}>
+            kept because: {m.significanceReason}
           </div>
           <ul className="mt-1.5 flex list-inside list-disc flex-col gap-0.5 text-[12px]" style={{ color: "var(--color-ink-muted)" }}>
             {m.provenance.map((line, i) => (
@@ -630,6 +746,11 @@ function MuseumPanel() {
           </ul>
         </div>
       ))}
+      {shown.length < list.length && (
+        <button onClick={() => setLimit((l) => l + 40)} className="hud-btn self-start">
+          Load 40 more
+        </button>
+      )}
     </div>
   );
 }
@@ -668,8 +789,9 @@ function BuildingCard({
 }) {
   const ageYears = (sim.day - b.builtDay) / yearLen;
   const builders = (b.builtByIds ?? [])
-    .map((id) => sim.colonists.find((c) => c.id === id))
-    .filter((c): c is Colonist => !!c);
+    .map((id) => findPerson(sim, id))
+    .filter((c): c is PersonView => !!c);
+  const fabricCycles = Math.floor((b.fabricReplaced ?? 0) / 100);
   // events recorded while this structure was going up — the era it belongs to
   const era = sim.history
     .filter((h) => Math.abs(h.day - b.builtDay) < yearLen && h.category !== "crisis")
@@ -735,6 +857,18 @@ function BuildingCard({
             Everyone who built this is dead. It has outlived its makers.
           </div>
         )}
+        {(b.renovations > 0 || fabricCycles > 0) && (
+          <div className="leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
+            {b.renovations > 0 && (
+              <>Rebuilt from ruin {b.renovations} time{b.renovations === 1 ? "" : "s"}
+                {b.renovatedByName ? `, most recently under ${b.renovatedByName}` : ""}. </>
+            )}
+            {fabricCycles > 0 && (
+              <>Its fabric has been made good the equivalent of {fabricCycles} whole rebuild
+                {fabricCycles === 1 ? "" : "s"}, piece by piece — little of what was first raised is still here.</>
+            )}
+          </div>
+        )}
       </div>
 
       {era.length > 0 && (
@@ -781,11 +915,15 @@ function ColonistCard({
   godMode: boolean;
   onKill: () => void;
 }) {
+  const sim = useSimStore((s) => s.sim);
+  const earth = earthKnowledge(sim, c);
+  // relationships resolve through the archive too, so the dead stay nameable
   const rel = (kind: string) =>
     c.relationships
       .filter((r) => r.kind === kind)
-      .map((r) => all.find((x) => x.id === r.colonistId))
-      .filter((x): x is Colonist => !!x);
+      .map((r) => findPerson(sim, r.colonistId))
+      .filter((x): x is PersonView => !!x);
+  void all;
   const spouse = rel("spouse")[0];
   const children = rel("child");
   const parents = rel("parent");
@@ -804,7 +942,7 @@ function ColonistCard({
           </div>
           <div className="mt-0.5 font-mono text-[11.5px]" style={{ color: "var(--color-ink-muted)" }}>
             {c.alive ? `Age ${Math.floor(c.ageYears)}` : `† age ${Math.floor(c.ageYears)} — ${c.deathCause}`} · {c.occupation} ·{" "}
-            {c.bornOnEarth ? "Earth-born" : "offworld-born"}
+            {c.bornOnEarth ? "Earth-born" : `generation ${c.generation}`}
           </div>
         </div>
         <button onClick={onClose} className="hud-btn" aria-label="Close">
@@ -852,6 +990,29 @@ function ColonistCard({
               {c.health.chronicConditions.join(", ")}
             </div>
           )}
+        </div>
+      )}
+
+      <div className="rounded-md border p-2" style={{ borderColor: "var(--rule)", background: "var(--color-paper-2)" }}>
+        <div className="hud-label mb-0.5">What they know of Earth</div>
+        <div className="text-[12px]" style={{ color: "var(--color-ink)" }}>
+          <span style={{ color: "var(--color-accent)" }}>{earth.level}</span> · via {earth.source}
+        </div>
+        <div className="mt-0.5 text-[11.5px] leading-relaxed" style={{ color: "var(--color-ink-muted)" }}>
+          {earth.detail}
+        </div>
+      </div>
+
+      {c.trainedVia && c.trainedVia !== "none" && (
+        <div className="text-[12px]" style={{ color: "var(--color-ink-muted)" }}>
+          <span className="hud-label">Trained · </span>
+          {c.trainedVia === "school"
+            ? `at the colony school under ${c.trainedBy}`
+            : c.trainedVia === "parent"
+            ? `by their parent, ${c.trainedBy}`
+            : c.trainedVia === "practitioner"
+            ? `apprenticed to ${c.trainedBy}`
+            : "reconstructed from written records — no living teacher remained"}
         </div>
       )}
 
@@ -950,7 +1111,7 @@ function ColonistCard({
   );
 }
 
-function RelLink({ c, onSelect }: { c: Colonist; onSelect: (id: string) => void }) {
+function RelLink({ c, onSelect }: { c: PersonView | Colonist; onSelect: (id: string) => void }) {
   return (
     <button
       onClick={() => onSelect(c.id)}

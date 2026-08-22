@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { Rand } from "@/lib/sim/rng";
-import { createInitialState, tick, simulateDays } from "@/lib/sim/engine";
+import { createInitialState, simulateDays } from "@/lib/sim/engine";
 import type { ColonyPolicy, SimState } from "@/lib/sim/types";
 
 export type TimeSpeed = 0 | 1 | 10 | 100;
@@ -80,20 +80,35 @@ export const useSimStore = create<SimStore>((set, get) => ({
   killColonist: (id) => {
     const { sim } = get();
     const c = sim.colonists.find((x) => x.id === id);
-    if (c?.alive) {
-      c.alive = false;
-      c.deathDay = sim.day;
-      c.deathCause = "intervention (god mode)";
-      sim.history.push({
-        id: `evt-god-${sim.day}-${id}`,
-        day: sim.day,
-        title: `Death of ${c.name}`,
-        description: `${c.name} died suddenly. (Experimenter intervention.)`,
-        category: "death",
-        colonistIds: [id],
-      });
-      set((st) => ({ version: st.version + 1 }));
-    }
+    if (!c) return;
+    c.alive = false;
+    c.deathDay = sim.day;
+    c.deathCause = "intervention (god mode)";
+    sim.colonists = sim.colonists.filter((x) => x.id !== id);
+    sim.dead.push({
+      id: c.id,
+      name: c.name,
+      sex: c.sex,
+      birthDay: c.birthDay,
+      deathDay: sim.day,
+      deathCause: c.deathCause,
+      occupation: c.occupation,
+      bornOnEarth: c.bornOnEarth,
+      ageAtDeath: c.ageYears,
+      parentIds: c.relationships.filter((r) => r.kind === "parent").map((r) => r.colonistId),
+      childIds: c.relationships.filter((r) => r.kind === "child").map((r) => r.colonistId),
+    });
+    sim.stats.deaths += 1;
+    sim.history.push({
+      id: `evt-god-${sim.day}-${id}`,
+      day: sim.day,
+      significance: 2,
+      title: `Death of ${c.name}`,
+      description: `${c.name} died suddenly. (Experimenter intervention.)`,
+      category: "death",
+      colonistIds: [id],
+    });
+    set((st) => ({ version: st.version + 1 }));
   },
 
   grantResources: () => {

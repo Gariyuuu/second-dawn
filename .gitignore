@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sweep outputs (regenerate with scripts/sweep.ts)
+reports/*.json
