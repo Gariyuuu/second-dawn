@@ -88,8 +88,18 @@ if (survived.length) {
 
   console.log(`\nCULTURE`);
   const act = num(survived.map((r) => r.traditionsActive));
-  console.log(`  active traditions   min ${act[0]} · median ${med(act)} · max ${act[act.length - 1]}`);
-  console.log(`  faded traditions    median ${med(survived.map((r) => r.traditionsFaded))} · max ${Math.max(...survived.map((r) => r.traditionsFaded))}`);
+  console.log(`  ever created        median ${med(survived.map((r) => r.traditionsEverCreated))} · max ${Math.max(...survived.map((r) => r.traditionsEverCreated))}`);
+  console.log(`  active              min ${act[0]} · median ${med(act)} · max ${act[act.length - 1]}`);
+  console.log(`  declining           median ${med(survived.map((r) => r.traditionsDeclining))}`);
+  console.log(`  rare                median ${med(survived.map((r) => r.traditionsRare))}`);
+  console.log(`  dormant (forgotten) median ${med(survived.map((r) => r.traditionsFaded))} · max ${Math.max(...survived.map((r) => r.traditionsFaded))}`);
+  const anyFade = survived.filter((r) => r.traditionsFaded + r.traditionsRare > 0).length;
+  const anyRevive = survived.filter((r) => r.traditionsRevived > 0).length;
+  const anyMutate = survived.filter((r) => r.traditionsMutated > 0).length;
+  const allActive = survived.filter((r) => r.traditionsActive === r.traditionsEverCreated).length;
+  console.log(`  colonies where something faded to rare or dormant: ${anyFade}/${survived.length} (${pct(anyFade)})`);
+  console.log(`  colonies with a revival: ${anyRevive}/${survived.length} · with a mutated tradition: ${anyMutate}/${survived.length}`);
+  console.log(`  colonies where every tradition survived unchanged and active: ${allActive}/${survived.length}`);
   const tradCount = new Map<string, number>();
   for (const r of survived) for (const t of r.traditionNames) tradCount.set(t, (tradCount.get(t) ?? 0) + 1);
   console.log(`  distinct tradition names across all runs: ${tradCount.size}`);

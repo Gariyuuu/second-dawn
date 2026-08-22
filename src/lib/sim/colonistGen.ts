@@ -132,6 +132,7 @@ export function generateColonist(rand: Rand, index: number, landingDay: number):
   );
   const personality = rand.shuffle(TRAITS).slice(0, rand.int(2, 4));
   const ideology = rand.pick(IDEOLOGIES);
+  const skills = rollSkills(rand, primarySkills);
 
   return {
     id: `col-${index}-${Math.floor(rand.next() * 1e9).toString(36)}`,
@@ -141,7 +142,7 @@ export function generateColonist(rand: Rand, index: number, landingDay: number):
     bornOnEarth: true,
     ageYears,
     occupation,
-    skills: rollSkills(rand, primarySkills),
+    skills,
     personality,
     ideology,
     appearance: generateAppearance(rand, sex),
@@ -158,6 +159,11 @@ export function generateColonist(rand: Rand, index: number, landingDay: number):
     morale: rand.int(50, 85),
     alive: true,
     generation: 0,
+    // founders were trained on Earth; their ceiling is a little above where they
+    // currently practise
+    skillCeiling: Object.fromEntries(
+      Object.entries(skills).map(([k, v]) => [k, Math.min(94, (v as number) + rand.int(2, 8))])
+    ),
   };
 }
 

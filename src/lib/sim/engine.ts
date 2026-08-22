@@ -8,6 +8,7 @@ import {
   createFoundingArchives,
   decayArchives,
   practiceAndTeach,
+  documentKnowledge,
   updateTech,
   type KnowledgeContext,
 } from "./knowledge";
@@ -619,6 +620,7 @@ export function tick(state: SimState, rand: Rand): SimState {
   updateTech(s, ctx);
   decayArchives(s, rand);
   if (day % 30 === 0) practiceAndTeach(living, ctx, s, rand);
+  if (day % 60 === 0) documentKnowledge(s, ctx, rand);
 
   // --- morale and ageing (rotating cohort) ---
   for (let i = phase; i < living.length; i += stride) {
@@ -895,6 +897,7 @@ function handleBirths(
     baby.bornOnEarth = false;
     baby.occupation = "child";
     baby.skills = {};
+    baby.skillCeiling = {};
     baby.possessions = [];
     baby.goals = [];
     baby.fears = [];

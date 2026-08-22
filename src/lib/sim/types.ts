@@ -104,6 +104,13 @@ export interface Colonist {
   /** How this person acquired their trade, recorded when they came of age. */
   trainedVia?: "school" | "parent" | "practitioner" | "archive" | "none";
   trainedBy?: string;
+  /**
+   * The level of practice each trade can ever reach for this person, set by the
+   * quality of what they were taught. Someone who learned surgery from a manual
+   * has theory, not a surgeon's hands, and practice alone will not close that
+   * gap within a lifetime.
+   */
+  skillCeiling: Partial<Record<Skill, number>>;
 }
 
 export type ResourceKind =
@@ -175,7 +182,12 @@ export interface Tradition {
   observance: number; // 0-100, how widely it is actually kept right now
   peakObservance: number;
   lastRevivedDay?: number;
-  status: "active" | "faded";
+  /** Gradual cultural life-cycle rather than a binary. */
+  status: "active" | "declining" | "rare" | "dormant";
+  /** Where a revived form came from, and how it differs from the original. */
+  revivedFrom?: string;
+  mutations: { day: number; change: string }[];
+  dormantSinceDay?: number;
 }
 
 export interface Archive {
@@ -186,6 +198,12 @@ export interface Archive {
   integrity: number; // 0-100; decays when no institution maintains it
   topics: ("earth_history" | "technical" | "medical" | "colony_history")[];
   maintainedBy: "school" | "museum" | "none";
+  /**
+   * How deeply each trade was actually written down. Records only ever capture
+   * what practitioners took the trouble to document, so a field nobody mastered
+   * is a field the archive cannot teach.
+   */
+  recordedDepth: Partial<Record<Skill, number>>;
 }
 
 export interface Building {

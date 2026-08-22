@@ -1,26 +1,25 @@
-SECOND DAWN — Year-500 citizen interview · seed 42424242 · simulated in 40.8s
-Colony: Aurelia · population 1726 · regional_civilization · The Founders' Covenant
+SECOND DAWN — Year-500 citizen interview · seed 42424242 · simulated in 391.6s
+Colony: Aurelia · population 1791 · regional_civilization · The Charter Republic
 Generations elapsed: up to 17
 
 ==============================================================================
-RANDOM CHILD: Sable Kaur
+RANDOM CHILD: Rook Okafor
 ==============================================================================
 
 Q. Who are you?
-   Sable Kaur, age 13, born Year 486 on Aurelia.
-   Generation 14 — 14 generations removed from the people who landed.
-   Occupation: child. Ideology: pragmatist. Personality: stubborn, ambitious, nurturing, curious.
+   Rook Okafor, age 13, born Year 486 on Aurelia.
+   Generation 15 — 15 generations removed from the people who landed.
+   Occupation: child. Ideology: collectivist. Personality: stoic, curious, anxious.
 
 Q. Who is your family, and what do they do?
-   Parent: Sera Kaur (botanist, agriculture 88) — died Year 486
-   Parent: Aleth Petrov (ecologist, ecology 88) — living
-   Siblings: Corvane Kaur, Dray Kaur
+   Parent: Nova Okafor (security, combat 92) — living
+   Parent: Calen Haddad (laborer, construction 92) — living
    Ancestry:
-  parents: Sera Kaur (b.Year 445, d.Year 486), Aleth Petrov (b.Year 446, living)
-  grandparents: Nova Kaur (b.Year 411, d.Year 472), Oshen Petrov (b.Year 411, d.Year 484), Talla Petrov (b.Year 403, d.Year 480), Aleth Okafor (b.Year 403, d.Year 474)
-  great-grandparents: Zainab Kaur (b.Year 371, d.Year 423), Marrow Popescu (b.Year 378, d.Year 448), Delve Petrov (b.Year 389, d.Year 434), Aleth Osei (b.Year 389, d.Year 455), Lume Petrov (b.Year 359, d.Year 445), Kell Silva (b.Year 360, d.Year 446), Saoirse Okafor (b.Year 369, d.Year 410), Rhen Adeyemi (b.Year 362, d.Year 432)
-  great-great-grandparents: Nova Kaur (b.Year 323, d.Year 385), Kell Popescu (b.Year 325, d.Year 404), Talla Popescu (b.Year 348, d.Year 419), Fenn Rossi (b.Year 348, d.Year 418), Saoirse Petrov (b.Year 352, d.Year 418), Vesk Malik (b.Year 351, d.Year 421), Solen Osei (b.Year 351, d.Year 404), Marrow Popescu (b.Year 353, d.Year 435), Lume Petrov (b.Year 313, d.Year 401), Aleth Rossi (b.Year 313, d.Year 388), Priya Silva (b.Year 329, d.Year 400), Ardo Silva (b.Year 330, d.Year 404), Sera Okafor (b.Year 346, d.Year 428), Calen Osei (b.Year 346, d.Year 370), Maren Adeyemi (b.Year 334, d.Year 429), Dray Rossi (b.Year 336, d.Year 412)
-  great-great-great-grandparents: Ivree Kaur (b.Year 278, d.Year 353), Halo Petrov (b.Year 278, d.Year 358), Rina Popescu (b.Year 285, d.Year 360), Idris Adeyemi (b.Year 285, d.Year 329), Ondra Popescu (b.Year 315, d.Year 367), Andrei Malik (b.Year 315, d.Year 371), Sable Rossi (b.Year 306, d.Year 352), Kell Ibrahim (b.Year 306, d.Year 351), Delve Petrov (b.Year 326, d.Year 389), Vesk Adeyemi (b.Year 327, d.Year 379), Wren Malik (b.Year 318, d.Year 385), Corvane Osei (b.Year 320, d.Year 378), Noor Osei (b.Year 327, d.Year 385), Halo Baptiste (b.Year 329, d.Year 417), Maren Popescu (b.Year 315, d.Year 393), Oshen Petrov (b.Year 320, d.Year 359), Ryne Petrov (b.Year 281, d.Year 349), Aleth Torres (b.Year 285, d.Year 356), Talla Rossi (b.Year 283, d.Year 340), Vesk Adeyemi (b.Year 283, d.Year 364), Ashen Silva (b.Year 280, d.Year 366), Fenn Popescu (b.Year 283, d.Year 352), Vell Silva (b.Year 300, d.Year 375), Aleth Malik (b.Year 305, d.Year 381), Talla Okafor (b.Year 315, d.Year 385), Aleth Silva (b.Year 317, d.Year 371), Talla Osei (b.Year 301, d.Year 379), Gustavo Rossi (b.Year 301, d.Year 377), Ondra Adeyemi (b.Year 301, d.Year 343), Kell Popescu (b.Year 301, d.Year 378), Sana Rossi (b.Year 305, d.Year 390), Ardo Osei (b.Year 307, d.Year 374)
+  parents: Nova Okafor (b.Year 454, living), Calen Haddad (b.Year 456, living)
+  grandparents: Solen Okafor (b.Year 432, living), Oshen Rossi (b.Year 432, living), Peregrine Haddad (b.Year 412, d.Year 488), Halo Kaur (b.Year 412, d.Year 465)
+  great-grandparents: Elena Okafor (b.Year 383, d.Year 462), Kell Nguyen (b.Year 384, d.Year 474), Peregrine Rossi (b.Year 397, d.Year 440), Torin Adeyemi (b.Year 396, d.Year 467), Ashen Haddad (b.Year 369, d.Year 439), Felix Lindqvist (b.Year 371, d.Year 466), Ondra Kaur (b.Year 372, d.Year 464), Sunder Adeyemi (b.Year 372, d.Year 452)
+  great-great-grandparents: Sable Okafor (b.Year 341, d.Year 388), Kaveh Adeyemi (b.Year 341, d.Year 410), Wren Nguyen (b.Year 345, d.Year 418), Marrow Rossi (b.Year 345, d.Year 402), Ondra Rossi (b.Year 359, d.Year 455), Dray Kowalski (b.Year 359, d.Year 446), Delve Adeyemi (b.Year 363, d.Year 440), Oshen Kowalski (b.Year 371, d.Year 455), Ryne Haddad (b.Year 330, d.Year 411), Dray Adeyemi (b.Year 333, d.Year 383), Peregrine Lindqvist (b.Year 328, d.Year 415), Oshen Haddad (b.Year 328, d.Year 400), Ryne Kaur (b.Year 333, d.Year 385), Aleth Rossi (b.Year 335, d.Year 380), Ashen Adeyemi (b.Year 333, d.Year 404), Rook Haddad (b.Year 333, d.Year 403)
+  great-great-great-grandparents: Vell Okafor (b.Year 309, d.Year 355), Bilal Ibrahim (b.Year 306, d.Year 394), Ingrid Adeyemi (b.Year 303, d.Year 382), Kell Lindqvist (b.Year 303, d.Year 395), Chiara Nguyen (b.Year 303, d.Year 373), Dmitri Fischer (b.Year 304, d.Year 380), Sable Rossi (b.Year 315, d.Year 395), Kell Osei (b.Year 315, d.Year 404), Talla Rossi (b.Year 333, d.Year 420), Marrow Ibrahim (b.Year 333, d.Year 404), Ryne Kowalski (b.Year 329, d.Year 410), Rook Adeyemi (b.Year 330, d.Year 406), Wren Adeyemi (b.Year 317, d.Year 416), Calen Adeyemi (b.Year 319, d.Year 402), Ana Kowalski (b.Year 323, d.Year 406), Kell Kaur (b.Year 323, d.Year 389), Cindre Haddad (b.Year 303, d.Year 373), Aleth Kowalski (b.Year 303, d.Year 350), Vell Adeyemi (b.Year 303, d.Year 355), Felix Ibrahim (b.Year 303, d.Year 394), Sofia Lindqvist (b.Year 294, d.Year 354), Vesk Haddad (b.Year 300, d.Year 358), Maren Haddad (b.Year 298, d.Year 387), Rhen Fischer (b.Year 300, d.Year 384), Nova Kaur (b.Year 312, d.Year 387), Ravi Adeyemi (b.Year 312, d.Year 382), Talla Rossi (b.Year 286, d.Year 376), Oshen Adeyemi (b.Year 288, d.Year 350), Delve Adeyemi (b.Year 290, d.Year 369), Marrow Lindqvist (b.Year 290, d.Year 335), Lume Haddad (b.Year 287, d.Year 349), Kell Osei (b.Year 289, d.Year 377)
 
 Q. What is your trade, and how did you learn it?
    No trade. Trained via: n/a (nobody was available to teach one).
@@ -30,97 +29,90 @@ Q. What is Earth?
    Taught Earth history at school from records that are 92% intact.
 
 Q. What traditions do you keep, and why?
-   Landing Day (holiday, observance 78) — widely observed; grew up inside it
+   Landing Day (holiday, observance 28) — taught as colony history at school
       began Year 4, from: "Landing Day" in Year 1
-   Rootfall (holiday, observance 78) — widely observed; grew up inside it
+   First Furrow (holiday, observance 29) — taught as colony history at school
       began Year 6, from: "First Local Harvest" in Year 1
-   Covenant Day (holiday, observance 79) — widely observed; grew up inside it
+   Covenant Day (holiday, observance 31) — taught as colony history at school
       began Year 12, from: "Constitution Signed" in Year 2
-   The Outward Lamps (ritual, observance 63) — widely observed; grew up inside it
-      began Year 16, from: "Expedition Lost" in Year 11
-   Ridge Figures (art, observance 62) — widely observed; grew up inside it
+   Ridge Figures (art, observance 36) — taught as colony history at school
       began Year 33
-   The Keeping (custom, observance 63) — widely observed; grew up inside it
-      began Year 39
-   The Settlement Dialect (custom, observance 64) — widely observed; grew up inside it
+   The Keeping (custom, observance 37) — taught as colony history at school
+      began Year 38
+   The Settlement Dialect (custom, observance 37) — taught as colony history at school
       began Year 43
-   The Drowned Garden (myth, observance 79) — widely observed; grew up inside it
-      began Year 74, from: "The Last Earth Memory" in Year 69
-   The Fasting (ritual, observance 66) — widely observed; grew up inside it
-      began Year 202, from: "Food Shortage" in Year 80
+   The Drowned Garden (myth, observance 47) — taught as colony history at school
+      began Year 78, from: "The Last Earth Memory" in Year 72
 
 Q. What is the oldest building you know?
    Descent Lander — raised Year 1, 500 years ago.
-   Condition 90; fully rebuilt 3 times (last Year 275).
-   Its fabric has been made good 6795 condition-points over its life —
+   Condition 90; fully rebuilt 1 times (last Year 79).
+   Its fabric has been made good 6704 condition-points over its life —
    equivalent to replacing the whole structure 67 times piece by piece.
    Raised by: Built on Earth; flown down on Landing Day
 
 Q. Why does this settlement exist here at all?
-   The colony ship's descent vehicle touched down on Aurelia. 120 colonists disembarked under the command of Isabela Torres. Earth is unreachable. There will be no rescue.
-   That was 500 years ago. 14 generations of this person's family have lived since.
+   The colony ship's descent vehicle touched down on Aurelia. 120 colonists disembarked under the command of Ines Kaur. Earth is unreachable. There will be no rescue.
+   That was 500 years ago. 15 generations of this person's family have lived since.
 
    [provenance check] every answer above came from: colonist record, relationship graph,
    archived-dead records, building provenance fields, tradition origin event ids, and the
    canonical history log. No biography was authored for this person.
 
 ==============================================================================
-RANDOM ADULT: Vesk Costa
+RANDOM ADULT: Vell Kaur
 ==============================================================================
 
 Q. Who are you?
-   Vesk Costa, age 50, born Year 445 on Aurelia.
+   Vell Kaur, age 50, born Year 445 on Aurelia.
    Generation 14 — 14 generations removed from the people who landed.
-   Occupation: unskilled. Ideology: collectivist. Personality: stoic, anxious, nurturing.
+   Occupation: physician. Ideology: individualist. Personality: anxious, curious.
 
 Q. Who is your family, and what do they do?
-   Parent: Delve Costa (physician, medicine 88) — living
-   Parent: Aleth Adeyemi (unskilled) — died Year 500
-   Siblings: Wren Costa, Sunder Costa
-   Children: Sable Adeyemi, Cindre Adeyemi, Torin Adeyemi, Malia Adeyemi
+   Parent: Talla Kaur (fabricator, fabrication 92) — died Year 449
+   Parent: Calen Rossi (engineer, engineering 92) — died Year 453
+   Siblings: Vesk Kaur, Dray Kaur
+   Children: Ryne Kaur, Lume Kaur, Halo Kaur
    Ancestry:
-  parents: Delve Costa (b.Year 413, living), Aleth Adeyemi (b.Year 415, d.Year 500)
-  grandparents: Elena Costa (b.Year 384, d.Year 450), Rhen Rossi (b.Year 385, d.Year 463), Delve Adeyemi (b.Year 376, d.Year 436), Aleth Okafor (b.Year 376, d.Year 439)
-  great-grandparents: Thandiwe Costa (b.Year 354, d.Year 425), Rook Costa (b.Year 360, d.Year 436), Mei Rossi (b.Year 346, d.Year 429), Rook Adeyemi (b.Year 341, d.Year 408), Peregrine Adeyemi (b.Year 332, d.Year 430), Kell Rossi (b.Year 338, d.Year 423), Sable Okafor (b.Year 339, d.Year 435), Marrow Popescu (b.Year 336, d.Year 380)
-  great-great-grandparents: Talla Costa (b.Year 312, d.Year 393), Kell Popescu (b.Year 309, d.Year 392), Lume Costa (b.Year 320, d.Year 376), Rook Adeyemi (b.Year 324, d.Year 393), Ryne Rossi (b.Year 315, d.Year 355), Corvane Popescu (b.Year 315, d.Year 384), Sable Adeyemi (b.Year 304, d.Year 399), Aleksander Popescu (b.Year 305, d.Year 346), Delve Rossi (b.Year 314, d.Year 391), Corvane Moreau (b.Year 314, d.Year 367), Talla Okafor (b.Year 294, d.Year 351), Aleth Rossi (b.Year 294, d.Year 348), Cindre Popescu (b.Year 307, d.Year 384), Corvane Osei (b.Year 307, d.Year 365)
-  great-great-great-grandparents: Ivree Costa (b.Year 288, d.Year 359), Idris Ibrahim (b.Year 290, d.Year 385), Yuki Popescu (b.Year 281, d.Year 325), Calen Okafor (b.Year 283, d.Year 338), Sable Costa (b.Year 291, d.Year 371), Ardo Popescu (b.Year 292, d.Year 382), Vell Adeyemi (b.Year 303, d.Year 327), Marrow Popescu (b.Year 303, d.Year 385), Talla Rossi (b.Year 284, d.Year 349), Yusuf Rossi (b.Year 283, d.Year 365), Nova Popescu (b.Year 278, d.Year 346), Amadi Okafor (b.Year 279, d.Year 345), Wren Adeyemi (b.Year 272, d.Year 337), Vesk Popescu (b.Year 273, d.Year 345), Ashen Popescu (b.Year 260, d.Year 313), Ardo Popescu (b.Year 265, d.Year 344), Fatima Rossi (b.Year 272, d.Year 344), Felix Voss (b.Year 276, d.Year 328), Delve Moreau (b.Year 289, d.Year 346), Diego Popescu (b.Year 290, d.Year 340), Vell Okafor (b.Year 247, d.Year 302), Halo Silva (b.Year 248, d.Year 338), Wren Rossi (b.Year 252, d.Year 332), Oshen Marchetti (b.Year 252, d.Year 308), Cindre Popescu (b.Year 259, d.Year 345), Corvane Popescu (b.Year 260, d.Year 333), Naledi Osei (b.Year 263, d.Year 348), Vesk Torres (b.Year 264, d.Year 334)
+  parents: Talla Kaur (b.Year 401, d.Year 449), Calen Rossi (b.Year 400, d.Year 453)
+  grandparents: Maren Kaur (b.Year 366, d.Year 465), Bram Andersson (b.Year 368, d.Year 439), Saoirse Rossi (b.Year 374, d.Year 462), Tane Kaur (b.Year 378, d.Year 459)
+  great-grandparents: Lume Kaur (b.Year 330, d.Year 411), Hiroshi Nguyen (b.Year 337, d.Year 399), Ashen Andersson (b.Year 326, d.Year 375), Marrow Haddad (b.Year 328, d.Year 402), Peregrine Rossi (b.Year 331, d.Year 418), Rook Ibrahim (b.Year 333, d.Year 420), Katarina Kaur (b.Year 350, d.Year 437), Dray Ibrahim (b.Year 351, d.Year 428)
+  great-great-grandparents: Nova Kaur (b.Year 294, d.Year 374), Oshen Adeyemi (b.Year 296, d.Year 361), Cindre Nguyen (b.Year 315, d.Year 389), Rhen Kaur (b.Year 315, d.Year 337), Wren Andersson (b.Year 297, d.Year 386), Corvane Marchetti (b.Year 301, d.Year 371), Cindre Haddad (b.Year 303, d.Year 373), Aleth Kowalski (b.Year 303, d.Year 350), Talla Rossi (b.Year 307, d.Year 386), Corvane Ibrahim (b.Year 307, d.Year 373), Ivree Ibrahim (b.Year 298, d.Year 347), Calen Haddad (b.Year 297, d.Year 335), Ingrid Kaur (b.Year 325, d.Year 371), Fenn Adeyemi (b.Year 326, d.Year 410), Peregrine Ibrahim (b.Year 320, d.Year 390), Oshen Rossi (b.Year 325, d.Year 373)
+  great-great-great-grandparents: Sera Kaur (b.Year 261, d.Year 332), Mateo Haddad (b.Year 262, d.Year 310), Ivree Adeyemi (b.Year 255, d.Year 321), Corvane Rossi (b.Year 254, d.Year 331), Delve Nguyen (b.Year 267, d.Year 339), Rafael Kaur (b.Year 267, d.Year 354), Solen Kaur (b.Year 277, d.Year 363), Sami Lindqvist (b.Year 278, d.Year 342), Ondra Andersson (b.Year 261, d.Year 349), Aleth Fischer (b.Year 268, d.Year 319), Noor Marchetti (b.Year 266, d.Year 344), Corvane Ibrahim (b.Year 266, d.Year 343), Zainab Haddad (b.Year 259, d.Year 335), Fenn Adeyemi (b.Year 253, d.Year 338), Solen Kowalski (b.Year 276, d.Year 371), Aleksander Osei (b.Year 277, d.Year 374), Ondra Rossi (b.Year 275, d.Year 351), Arjun Rossi (b.Year 276, d.Year 366), Talla Ibrahim (b.Year 282, d.Year 355), Torin Lindqvist (b.Year 283, d.Year 370), Cindre Ibrahim (b.Year 268, d.Year 338), Torin Haddad (b.Year 268, d.Year 357), Ryne Haddad (b.Year 271, d.Year 360), Sunder Osei (b.Year 275, d.Year 338), Ivree Kaur (b.Year 291, d.Year 326), Oshen Fischer (b.Year 293, d.Year 368), Cindre Adeyemi (b.Year 291, d.Year 363), Halo Kowalski (b.Year 291, d.Year 364), Sofia Ibrahim (b.Year 273, d.Year 358), Yusuf Ibrahim (b.Year 275, d.Year 339), Saoirse Rossi (b.Year 277, d.Year 348), Vesk Voss (b.Year 277, d.Year 363)
 
 Q. What is your trade, and how did you learn it?
-   No trade. Trained via: none (nobody was available to teach one).
+   medicine 92, cooking 12, leadership 10, agriculture 6, geology 4
+   Trained at the colony school under Ryne Okafor.
 
 Q. What is Earth?
    Understanding: TAUGHT · source: school curriculum
    Taught Earth history at school from records that are 92% intact.
 
 Q. What traditions do you keep, and why?
-   Landing Day (holiday, observance 78) — widely observed; grew up inside it
+   Landing Day (holiday, observance 28) — taught as colony history at school
       began Year 4, from: "Landing Day" in Year 1
-   Rootfall (holiday, observance 78) — widely observed; grew up inside it
+   First Furrow (holiday, observance 29) — taught as colony history at school
       began Year 6, from: "First Local Harvest" in Year 1
-   Covenant Day (holiday, observance 79) — widely observed; grew up inside it
+   Covenant Day (holiday, observance 31) — taught as colony history at school
       began Year 12, from: "Constitution Signed" in Year 2
-   The Outward Lamps (ritual, observance 63) — widely observed; grew up inside it
-      began Year 16, from: "Expedition Lost" in Year 11
-   Ridge Figures (art, observance 62) — widely observed; grew up inside it
+   Ridge Figures (art, observance 36) — taught as colony history at school
       began Year 33
-   The Keeping (custom, observance 63) — widely observed; grew up inside it
-      began Year 39
-   The Settlement Dialect (custom, observance 64) — widely observed; grew up inside it
+   The Keeping (custom, observance 37) — taught as colony history at school
+      began Year 38
+   The Settlement Dialect (custom, observance 37) — taught as colony history at school
       began Year 43
-   The Drowned Garden (myth, observance 79) — widely observed; grew up inside it
-      began Year 74, from: "The Last Earth Memory" in Year 69
-   The Fasting (ritual, observance 66) — widely observed; grew up inside it
-      began Year 202, from: "Food Shortage" in Year 80
+   The Drowned Garden (myth, observance 47) — taught as colony history at school
+      began Year 78, from: "The Last Earth Memory" in Year 72
 
 Q. What is the oldest building you know?
    Descent Lander — raised Year 1, 500 years ago.
-   Condition 90; fully rebuilt 3 times (last Year 275).
-   Its fabric has been made good 6795 condition-points over its life —
+   Condition 90; fully rebuilt 1 times (last Year 79).
+   Its fabric has been made good 6704 condition-points over its life —
    equivalent to replacing the whole structure 67 times piece by piece.
    Raised by: Built on Earth; flown down on Landing Day
 
 Q. Why does this settlement exist here at all?
-   The colony ship's descent vehicle touched down on Aurelia. 120 colonists disembarked under the command of Isabela Torres. Earth is unreachable. There will be no rescue.
+   The colony ship's descent vehicle touched down on Aurelia. 120 colonists disembarked under the command of Ines Kaur. Earth is unreachable. There will be no rescue.
    That was 500 years ago. 14 generations of this person's family have lived since.
 
    [provenance check] every answer above came from: colonist record, relationship graph,

@@ -447,11 +447,11 @@ function HistoryPanel({ history, yearLen }: { history: HistoryEvent[]; yearLen: 
 
 function PeoplePanel({ onSelect, yearLen }: { onSelect: (id: string) => void; yearLen: number }) {
   const sim = useSimStore((s) => s.sim);
-  const version = useSimStore((s) => s.version);
-  void version;
+  // deliberately not subscribed to `version`: re-rendering thousands of archive
+  // rows on every simulated day is what made this panel slow to open
   const [showDead, setShowDead] = useState(false);
   const [query, setQuery] = useState("");
-  const [limit, setLimit] = useState(120);
+  const [limit, setLimit] = useState(60);
 
   const living = sim.colonists;
   const dead = sim.dead;
@@ -472,23 +472,25 @@ function PeoplePanel({ onSelect, yearLen }: { onSelect: (id: string) => void; ye
       id: c.id, name: c.name, alive: true,
       meta: `${Math.floor(c.ageYears)}y · ${c.occupation}${c.bornOnEarth ? " · Earth-born" : ` · gen ${c.generation}`}`,
     }));
-  }, [showDead, q, limit, living, dead, version, yearLen]);
+    // keyed on counts rather than array identity: the roster only changes when
+    // somebody is born or dies, so ticking the clock does not rebuild the list
+  }, [showDead, q, limit, living, dead, living.length, dead.length, yearLen]);
 
   const total = showDead ? dead.length : living.length;
 
   return (
     <div>
       <div className="hud-seg mb-2">
-        <button onClick={() => { setShowDead(false); setLimit(120); }} className="hud-btn" data-on={!showDead}>
+        <button onClick={() => { setShowDead(false); setLimit(60); }} className="hud-btn" data-on={!showDead}>
           Living · {living.length.toLocaleString()}
         </button>
-        <button onClick={() => { setShowDead(true); setLimit(120); }} className="hud-btn" data-on={showDead}>
+        <button onClick={() => { setShowDead(true); setLimit(60); }} className="hud-btn" data-on={showDead}>
           Dead · {dead.length.toLocaleString()}
         </button>
       </div>
       <input
         value={query}
-        onChange={(e) => { setQuery(e.target.value); setLimit(120); }}
+        onChange={(e) => { setQuery(e.target.value); setLimit(60); }}
         placeholder="search by name"
         className="mb-2 w-full rounded-md border px-2 py-1.5 font-mono text-[12px] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-focus)]"
         style={{ background: "var(--color-paper-2)", borderColor: "var(--rule)", color: "var(--color-ink)" }}

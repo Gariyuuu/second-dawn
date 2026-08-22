@@ -45,7 +45,12 @@ export interface RunRecord {
   skillPools: Record<string, number>;
   tradesWithNoPractitioner: string[];
   traditionsActive: number;
+  traditionsDeclining: number;
+  traditionsRare: number;
   traditionsFaded: number;
+  traditionsEverCreated: number;
+  traditionsRevived: number;
+  traditionsMutated: number;
   traditionNames: string[];
   museumTotal: number;
   museumOnDisplay: number;
@@ -133,7 +138,12 @@ export function summarize(s: SimState, seed: number, policyName: string, years: 
     skillPools,
     tradesWithNoPractitioner: missing,
     traditionsActive: s.traditions.filter((t) => t.status === "active").length,
-    traditionsFaded: s.traditions.filter((t) => t.status === "faded").length,
+    traditionsDeclining: s.traditions.filter((t) => t.status === "declining").length,
+    traditionsRare: s.traditions.filter((t) => t.status === "rare").length,
+    traditionsFaded: s.traditions.filter((t) => t.status === "dormant").length,
+    traditionsEverCreated: s.traditions.length,
+    traditionsRevived: s.traditions.filter((t) => t.lastRevivedDay !== undefined).length,
+    traditionsMutated: s.traditions.filter((t) => t.mutations.length > 0).length,
     traditionNames: s.traditions.map((t) => t.name),
     museumTotal: s.museum.length,
     museumOnDisplay: s.museum.filter((m) => !m.archived).length,

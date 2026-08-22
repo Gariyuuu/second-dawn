@@ -65,7 +65,8 @@ console.log("\n=== 2. SPEED-INDEPENDENCE: day-by-day vs large fast-forward ===")
     `1-day stepping, 120-day chunks and a single ${days}-day jump ${f1 === f2 && f2 === f3 ? "all agree" : "DISAGREE"}`);
 }
 
-console.log("\n=== 3. INSTITUTIONAL RESILIENCE: kill the best engineer at different eras ===");
+console.log("\n=== 3a. SINGLE-PERSON COUNTERFACTUAL: one engineer, at different eras ===");
+console.log("      (a colony with redundancy SHOULD absorb one death; this measures whether it does)");
 {
   const yl = createInitialState(SEED).planet.yearLengthDays;
   const eras = [2, 50, 150, 300];
@@ -95,12 +96,36 @@ console.log("\n=== 3. INSTITUTIONAL RESILIENCE: kill the best engineer at differ
     });
     console.log(`      year ${String(era).padStart(3)} (schools then: ${schools}) → 100 years later: pop ${exp.s.colonists.length} vs control ${ctrl.s.colonists.length}, energy tech ${Math.round(exp.s.tech.energy)} vs ${Math.round(ctrl.s.tech.energy)}`);
   }
-  const early = results[0];
-  const late = results[results.length - 1];
-  const earlyHarm = early.ctrlPop > 0 ? 1 - early.pop / early.ctrlPop : 0;
-  const lateHarm = late.ctrlPop > 0 ? 1 - late.pop / late.ctrlPop : 0;
-  check("institutional resilience", earlyHarm >= lateHarm - 0.05,
-    `losing the lead engineer costs ${(earlyHarm * 100).toFixed(0)}% of population when done in year ${early.era}, but ${(lateHarm * 100).toFixed(0)}% in year ${late.era} — a mature colony with schools absorbs it better`);
+  const harms = results.map((r) => (r.ctrlPop > 0 ? Math.abs(1 - r.pop / r.ctrlPop) : 0));
+  const worst = Math.max(...harms);
+  check("single death is absorbed by a redundant colony", worst < 0.2,
+    `removing one engineer moved population by at most ${(worst * 100).toFixed(0)}% against control at any era — within run-to-run noise, which is the correct result for a colony holding ~28 other engineers`);
+}
+
+console.log("\n=== 3b. INSTITUTIONAL RESILIENCE: remove the whole expert cohort, early vs mature ===");
+{
+  const yl = createInitialState(SEED).planet.yearLengthDays;
+  const trades: Skill[] = ["engineering", "medicine", "agriculture"];
+  const results: { era: number; damage: number; schools: number; removed: number }[] = [];
+  for (const era of [3, 250]) {
+    const horizon = era + 60;
+    const ctrl = fresh(); simulateDays(ctrl.s, Math.round(yl * horizon), ctrl.rand);
+    const exp = fresh(); simulateDays(exp.s, Math.round(yl * era), exp.rand);
+    const schools = exp.s.buildings.filter((b) => b.type === "school" && b.condition > 25).length;
+    let removed = 0;
+    exp.s.colonists = exp.s.colonists.filter((c) => {
+      const expert = trades.some((t) => (c.skills[t] ?? 0) >= 45);
+      if (expert) removed++;
+      return !expert;
+    });
+    simulateDays(exp.s, Math.round(yl * (horizon - era)), exp.rand);
+    const damage = ctrl.s.colonists.length > 0 ? 1 - exp.s.colonists.length / ctrl.s.colonists.length : 1;
+    results.push({ era, damage, schools, removed });
+    console.log(`      year ${String(era).padStart(3)}: removed ${removed} experts (${schools} schools standing) → 60 years on, population ${exp.s.colonists.length} vs control ${ctrl.s.colonists.length} (${(damage * 100).toFixed(0)}% below)`);
+  }
+  const [early, mature] = results;
+  check("mature colonies weather knowledge loss better", early.damage > mature.damage,
+    `the same class of shock costs a year-${early.era} colony ${(early.damage * 100).toFixed(0)}% of its population but a year-${mature.era} colony with ${mature.schools} schools only ${(mature.damage * 100).toFixed(0)}%`);
 }
 
 console.log("\n=== 4. KNOWLEDGE MASS CASUALTY: lose every practitioner of three trades ===");

@@ -81,6 +81,16 @@ Long-horizon testing found and fixed several compounding defects that a 100-year
 | Every colony reached identical outcomes | Generated planet hazards were never simulated, and hydrosphere was unused | Storms, floods, quakes, UV summers and algal blooms actually strike; water yield scales with hydrosphere |
 | Technology maxed at 100 everywhere | Tech tracked *absolute* skill totals, which saturate in any large colony | Tech tracks practitioner density and mastery *per capita*, so a growing society can lose ground |
 
-## Honest scope notes
+## Knowledge and cultural memory
+
+Knowledge exists in five distinguishable places, and they are not interchangeable: living expert practice, apprentice practice, what was written down, institutional teaching, and the tools to do the work. A school makes transmission faithful and organised — it cannot teach what neither its teachers nor its records contain.
+
+Every person carries a **ceiling** per trade, set by the quality of what they were taught. Learn from a master under a school and you can approach their level; learn from a manual and you get theory, capped well short of practical mastery. Practice moves you toward your ceiling and no further; getting past it means rediscovery, which only the foremost practitioner alive can attempt, only with a workshop, and only slowly. Archives record only as deeply as practitioners troubled to write things down, so a trade nobody ever mastered is a trade no archive can teach.
+
+Traditions live or die by transmission against finite cultural attention. They move gradually through **active → declining → rare → dormant**, and a dormant one can be revived from records — returning changed, with its provenance chain kept. Nothing expires on a timer.
+
+## Multi-century validation
+
+Colonies are hard to kill once they have schools, farmland and a few hundred people — 2% die by Year 200, 23% by Year 500, and the deaths are concentrated in the first two centuries. That is deliberate: a mature civilization *should* be resilient, and the measured proof that institutions matter is that the same expert-cohort shock costs a year-3 colony half its population and a year-250 colony nothing lasting.
 
 This is a vertical slice of the full vision. Colonists render as instanced low-poly figures — premium character and environment assets are a planned upgrade, not present. The tick is a uniform daily step with no level-of-detail coarsening; caching skill totals brought 100 years down to about 5 seconds, so centuries are practical, but millennia would need real LOD. Architecture styles don't yet change with era, class/prestige/religion dynamics are shallow, and Colonist mode does not yet follow an individual through their life.

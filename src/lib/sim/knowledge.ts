@@ -76,12 +76,61 @@ export function tradeNeeds(ctx: KnowledgeContext): [Skill, number][] {
 
 // ---------- archives ----------
 
+export const ARCHIVE_TOPIC_FOR: Partial<Record<Skill, Archive["topics"][number]>> = {
+  medicine: "medical",
+  engineering: "technical",
+  fabrication: "technical",
+  construction: "technical",
+  geology: "technical",
+  agriculture: "technical",
+  ecology: "technical",
+  piloting: "technical",
+  education: "colony_history",
+  leadership: "colony_history",
+  cooking: "colony_history",
+  combat: "colony_history",
+};
+
 export function archiveIntegrity(s: SimState, topic: Archive["topics"][number]): number {
   let best = 0;
   for (const a of s.archives) {
     if (a.topics.includes(topic)) best = Math.max(best, a.integrity);
   }
   return best;
+}
+
+/** The deepest level of a trade that surviving records actually capture. */
+export function recordedDepth(s: SimState, skill: Skill): number {
+  let best = 0;
+  for (const a of s.archives) best = Math.max(best, a.recordedDepth[skill] ?? 0);
+  return best;
+}
+
+/**
+ * Practitioners write down what they know — but only while they are alive to do
+ * it, and only well when there are literate institutions to write into. Records
+ * therefore lag living practice and can never lead it, which is why a field that
+ * nobody ever mastered is a field no archive can teach.
+ */
+export function documentKnowledge(s: SimState, ctx: KnowledgeContext, rand: Rand) {
+  const schools = s.buildings.filter((b) => b.type === "school" && b.condition > 25).length;
+  if (!schools) return;
+  const literacy = Math.min(1, (ctx.pools.education ?? 0) / 400);
+  if (literacy < 0.05) return;
+  const archive = s.archives.find((a) => a.topics.includes("technical"));
+  if (!archive) return;
+
+  for (const sk of ALL_SKILLS) {
+    // the best living practice is what stands to be written down
+    let bestLevel = 0;
+    for (const t of ctx.teachers[sk] ?? []) bestLevel = Math.max(bestLevel, t.skills[sk] ?? 0);
+    if (bestLevel <= 0) continue;
+    const target = bestLevel * (0.6 + 0.35 * literacy);
+    const cur = archive.recordedDepth[sk] ?? 0;
+    if (cur < target) {
+      archive.recordedDepth[sk] = Math.min(target, cur + rand.float(0.01, 0.05));
+    }
+  }
 }
 
 /**
@@ -166,34 +215,43 @@ export function apprentice(
 
   const eduBonus = schools > 0 ? rand.int(8, 16) : rand.int(0, 6);
 
-  if (schools > 0 && best) {
-    // institutional training: taught by the best available practitioner
-    const lvl = Math.round((best.skills[chosen] ?? 0) * rand.float(0.62, 0.8)) + eduBonus;
-    youth.skills[chosen] = Math.min(92, Math.max(youth.skills[chosen] ?? 0, lvl));
-    return { skill: chosen, level: youth.skills[chosen]!, via: "school", teacherName: best.name };
-  }
-  if (parentTeacher) {
-    const lvl = Math.round((parentTeacher.skills[chosen] ?? 0) * rand.float(0.5, 0.72)) + eduBonus;
-    youth.skills[chosen] = Math.min(92, Math.max(youth.skills[chosen] ?? 0, lvl));
-    return { skill: chosen, level: youth.skills[chosen]!, via: "parent", teacherName: parentTeacher.name };
-  }
-  if (best) {
-    const lvl = Math.round((best.skills[chosen] ?? 0) * rand.float(0.45, 0.68)) + eduBonus;
-    youth.skills[chosen] = Math.min(92, Math.max(youth.skills[chosen] ?? 0, lvl));
-    return { skill: chosen, level: youth.skills[chosen]!, via: "practitioner", teacherName: best.name };
-  }
+  // A school makes transmission faithful and well organised; it cannot pass on
+  // more than its teachers actually know.
+  const learnFrom = (teacher: Colonist, fidelity: number, ceilingShare: number, via: ApprenticeResult["via"]) => {
+    const teacherLevel = teacher.skills[chosen!] ?? 0;
+    const lvl = Math.round(teacherLevel * fidelity) + eduBonus;
+    youth.skills[chosen!] = Math.min(92, Math.max(youth.skills[chosen!] ?? 0, lvl));
+    // you can approach, and just occasionally better, the practice you were shown
+    youth.skillCeiling[chosen!] = Math.max(
+      youth.skillCeiling[chosen!] ?? 0,
+      Math.min(94, Math.round(teacherLevel * ceilingShare) + eduBonus)
+    );
+    return { skill: chosen!, level: youth.skills[chosen!]!, via, teacherName: teacher.name };
+  };
 
-  // Nobody alive practises it. Written records give a slow, partial recovery —
-  // and only if the records are still readable and someone can read them.
-  // Reading a trade out of a book without anyone to show you is slow, uncertain,
-  // and only ever gets you part of the way. Most attempts come to nothing, which
-  // is why a trade with no living practitioner can stay lost for generations.
-  const integrity = archiveIntegrity(s, "technical");
-  const canRead = schools > 0 && (ctx.pools.education ?? 0) > 60;
-  if (integrity > 45 && canRead && rand.bool(0.10)) {
-    const lvl = Math.round(integrity * rand.float(0.10, 0.22));
-    if (lvl > 5) {
-      youth.skills[chosen] = Math.min(38, Math.max(youth.skills[chosen] ?? 0, lvl));
+  if (schools > 0 && best) return learnFrom(best, rand.float(0.62, 0.8), rand.float(0.95, 1.03), "school");
+  if (parentTeacher) return learnFrom(parentTeacher, rand.float(0.5, 0.72), rand.float(0.86, 0.96), "parent");
+  if (best) return learnFrom(best, rand.float(0.45, 0.68), rand.float(0.82, 0.93), "practitioner");
+
+  // Nobody alive practises it. Records carry the theory of a trade forward, but
+  // only as deeply as someone once troubled to write it down and only as clearly
+  // as the copies survived. What comes back is book-learning: practical
+  // competence has to be rebuilt by doing, across generations.
+  const topic = ARCHIVE_TOPIC_FOR[chosen] ?? "technical";
+  const integrity = archiveIntegrity(s, topic);
+  const documented = recordedDepth(s, chosen);
+  const canRead = schools > 0 ? (ctx.pools.education ?? 0) > 30 : (ctx.pools.education ?? 0) > 90;
+  const chance = schools > 0 ? 0.4 : 0.12;
+  if (integrity > 25 && documented > 15 && canRead && rand.bool(chance)) {
+    const theory = documented * (integrity / 100);
+    const lvl = Math.round(theory * rand.float(0.28, 0.45));
+    if (lvl > 4) {
+      youth.skills[chosen] = Math.max(youth.skills[chosen] ?? 0, lvl);
+      // theory without a master sits well short of practical mastery
+      youth.skillCeiling[chosen] = Math.max(
+        youth.skillCeiling[chosen] ?? 0,
+        Math.round(theory * rand.float(0.5, 0.68))
+      );
       return { skill: chosen, level: youth.skills[chosen]!, via: "archive" };
     }
   }
@@ -209,7 +267,10 @@ export function practiceAndTeach(living: Colonist[], ctx: KnowledgeContext, s: S
   const needs = tradeNeeds(ctx);
   const needSet = new Set(needs.slice(0, 4).map(([sk]) => sk));
 
-  // practice: everyone gets slowly better at their strongest trade while working
+  // Practice carries a person toward the level of practice they were shown, and
+  // no further. Getting past that means rediscovering it — which only the best
+  // practitioner alive can attempt, only with the tools to try it on, and only
+  // slowly enough that it takes generations rather than years.
   for (const c of living) {
     if (c.occupation === "child" || c.ageYears > 68) continue;
     let bestSkill: Skill | null = null;
@@ -218,8 +279,17 @@ export function practiceAndTeach(living: Colonist[], ctx: KnowledgeContext, s: S
       const v = c.skills[key as Skill] ?? 0;
       if (v > bestVal) { bestVal = v; bestSkill = key as Skill; }
     }
-    if (bestSkill && bestVal < 88 && rand.bool(0.35)) {
-      c.skills[bestSkill] = Math.min(92, bestVal + 1);
+    if (!bestSkill) continue;
+    const ceiling = c.skillCeiling[bestSkill] ?? Math.max(bestVal, 55);
+    if (bestVal < ceiling && rand.bool(0.35)) {
+      c.skills[bestSkill] = Math.min(92, Math.min(ceiling, bestVal + 1));
+    } else if (bestVal >= ceiling && ceiling < 92) {
+      const frontier = ctx.teachers[bestSkill] ?? [];
+      const isForemost = frontier.every((t) => (t.skills[bestSkill!] ?? 0) <= bestVal + 1);
+      const hasWorkshop = s.buildings.some((b) => b.type === "workshop" && b.condition > 25);
+      if (isForemost && hasWorkshop && rand.bool(0.06)) {
+        c.skillCeiling[bestSkill] = Math.min(92, ceiling + 1); // incremental rediscovery
+      }
     }
   }
 
@@ -238,7 +308,13 @@ export function practiceAndTeach(living: Colonist[], ctx: KnowledgeContext, s: S
     // an unskilled adult retrained into a needed trade is how a colony recovers
     const student = rand.pick(students);
     const gain = (schools > 0 ? rand.int(2, 5) : rand.int(1, 3)) * (needSet.has(skill) ? 2 : 1);
-    student.skills[skill] = Math.min(88, (student.skills[skill] ?? 0) + gain);
+    // Being taught raises what this student can reach, but only toward what the
+    // teacher themselves can do.
+    const teacherLevel = teacher.skills[skill] ?? 0;
+    const raised = Math.min(94, Math.round(teacherLevel * (schools > 0 ? 0.95 : 0.86)));
+    student.skillCeiling[skill] = Math.max(student.skillCeiling[skill] ?? 0, raised);
+    const ceiling = student.skillCeiling[skill] ?? raised;
+    student.skills[skill] = Math.min(88, Math.min(ceiling, (student.skills[skill] ?? 0) + gain));
   }
 }
 
@@ -396,6 +472,13 @@ export function traditionsKnownBy(s: SimState, c: Colonist): { name: string; how
 }
 
 export function createFoundingArchives(): Archive[] {
+  // The mission shipped with reference material covering the trades it selected
+  // for — thorough on engineering and medicine, thinner on everything else.
+  const recordedDepth: Partial<Record<Skill, number>> = {
+    engineering: 72, medicine: 70, agriculture: 62, construction: 60,
+    fabrication: 58, geology: 50, ecology: 45, piloting: 48,
+    education: 40, cooking: 35, leadership: 30, combat: 30,
+  };
   return [
     {
       id: "arc-ship-library",
@@ -403,8 +486,9 @@ export function createFoundingArchives(): Archive[] {
       kind: "ship_library",
       createdDay: 0,
       integrity: 100,
-      topics: ["earth_history", "technical", "medical"],
+      topics: ["earth_history", "technical", "medical", "colony_history"],
       maintainedBy: "none",
+      recordedDepth,
     },
   ];
 }

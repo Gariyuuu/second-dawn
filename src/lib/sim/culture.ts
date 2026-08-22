@@ -181,7 +181,7 @@ const CANDIDATES: Candidate[] = [
 export function formTraditions(s: SimState, rand: Rand, day: number, makeEvent: (
   day: number, title: string, description: string, category: HistoryEvent["category"]
 ) => HistoryEvent) {
-  const active = s.traditions.filter((t) => t.observance > 20).length;
+  const active = s.traditions.filter((t) => t.status === "active" || t.status === "declining").length;
   // cultural saturation: an established society resists adding more major days
   const saturation = Math.min(0.95, active / 7);
   if (rand.next() < saturation) return;
@@ -202,6 +202,7 @@ export function formTraditions(s: SimState, rand: Rand, day: number, makeEvent: 
       peakObservance: 60,
       lastRevivedDay: undefined,
       status: "active",
+      mutations: [],
     });
     s.history.push(
       makeEvent(day, `A Tradition Takes Hold: ${name}`, description, "culture")
@@ -210,51 +211,116 @@ export function formTraditions(s: SimState, rand: Rand, day: number, makeEvent: 
   }
 }
 
+const MUTATIONS = [
+  "the observance moved to a different season, since nobody now remembers which month it belonged to",
+  "the reading of names was shortened; there are too many to say them all",
+  "the fast was softened to a single day, then to a symbolic meal",
+  "an older ritual was folded into it, and the two are now told as one story",
+  "the lamps were replaced with lights, and the walk out to the settlement edge dropped",
+  "what it commemorates is now given as a parable rather than as an event",
+  "the words are kept but their meaning has shifted; the old phrasing is recited without translation",
+];
+
 /**
- * Traditions live or die by transmission. One kept by people who remember why it
- * exists stays strong; one whose origin generation is gone survives only if an
- * institution carries it, and otherwise fades — and can later be revived if
- * circumstances make it meaningful again.
+ * Traditions live or die by transmission, and attention is finite. One kept by
+ * people who remember why it exists stays strong; one whose origin generation is
+ * gone leans on institutions and on still meaning something, and otherwise
+ * slides out of practice. Nothing expires on a timer — an observance fades
+ * because fewer and fewer people keep it.
  */
 export function transmitTraditions(s: SimState, rand: Rand, day: number, makeEvent: (
   day: number, title: string, description: string, category: HistoryEvent["category"]
 ) => HistoryEvent) {
-  const living = s.colonists.filter((c) => c.alive);
+  const living = s.colonists;
   if (!living.length) return;
+  const yearLen = s.planet.yearLengthDays;
   const schools = s.buildings.filter((b) => b.type === "school" && b.condition > 25).length;
   const museums = s.buildings.filter((b) => b.type === "museum" && b.condition > 25).length;
   const halls = s.buildings.filter((b) => b.type === "hall_of_governance" && b.condition > 25).length;
 
+  // Finite cultural attention: the more observances a society already keeps, the
+  // harder it is for any single one to hold its place.
+  const kept = s.traditions.filter((t) => t.status === "active" || t.status === "declining");
+  const attention = Math.max(0.35, 1 - kept.length * 0.11);
+
   for (const t of s.traditions) {
-    // share of the living who were alive when it began — the people who know why
     const rememberers = living.filter((c) => c.birthDay <= t.foundedDay).length / living.length;
+    const ageYears = (day - t.foundedDay) / yearLen;
 
     let delta = 0;
-    delta += rememberers * 2.2; // living memory sustains it
-    if (schools > 0) delta += 0.55; // taught as colony history
-    if (museums > 0 && t.kind !== "myth") delta += 0.25;
-    if (halls > 0 && t.kind === "holiday") delta += 0.3;
-    delta -= 0.85; // observance costs effort; without support it slips
+    delta += rememberers * 2.4; // living memory is the strongest carrier
+    if (schools > 0) delta += 0.42 * attention;
+    if (museums > 0 && t.kind !== "myth") delta += 0.18 * attention;
+    if (halls > 0 && t.kind === "holiday") delta += 0.22 * attention;
+    if (t.kind === "myth") delta += 0.34; // a good story needs no institution
+    if (t.kind === "custom" || t.kind === "art") delta += 0.16; // woven into daily life
 
-    // a myth needs no institution — it survives by being a good story
-    if (t.kind === "myth") delta += 0.55;
-    // hardship crowds out observance
-    if (s.resources.food <= 0) delta -= 1.2;
+    // Relevance: an observance about a hardship nobody has faced in living memory
+    // gradually stops meaning anything.
+    if (t.kind === "ritual" && ageYears > 60) delta -= 0.34;
+    // Nobody keeps an observance nobody else keeps. Once participation thins out
+    // it tends to keep thinning, which is how some traditions are lost entirely
+    // while others hold their place.
+    if (t.observance < 26) delta -= 0.45;
+    else if (t.observance < 34) delta -= 0.16;
+
+    delta -= 0.92; // keeping a tradition costs effort every year
+    if (s.resources.food <= 0) delta -= 1.4; // hardship crowds out observance
 
     t.observance = Math.max(0, Math.min(100, t.observance + delta * 0.02));
     t.peakObservance = Math.max(t.peakObservance, t.observance);
 
-    const wasActive = t.status === "active";
-    if (t.observance < 8 && wasActive) {
-      t.status = "faded";
-      s.history.push(
-        makeEvent(day, `${t.name} Falls Out of Practice`, `Observance of ${t.name} has lapsed. The last people who remembered why it started are gone, and nothing has carried it in their place.`, "culture")
-      );
-    } else if (t.observance > 35 && t.status === "faded") {
-      t.status = "active";
+    // gradual cultural states rather than on/off
+    const prev = t.status;
+    const next: typeof t.status =
+      t.observance >= 45 ? "active" : t.observance >= 22 ? "declining" : t.observance >= 6 ? "rare" : "dormant";
+
+    if (next !== prev) {
+      t.status = next;
+      if (next === "dormant") {
+        t.dormantSinceDay = day;
+        s.history.push(
+          makeEvent(day, `${t.name} Falls Out of Practice`, `Nobody keeps ${t.name} any more. The last people who remembered why it began are long dead, and no institution carried it in their place.`, "culture")
+        );
+      } else if (next === "rare" && prev === "declining") {
+        s.history.push(
+          makeEvent(day, `${t.name} Now Kept by Few`, `${t.name} has dwindled to a handful of families who still observe it. Most of the settlement no longer marks the day at all.`, "culture")
+        );
+      }
+    }
+
+    // Drift: a living tradition changes in the retelling, and the change sticks.
+    if ((t.status === "active" || t.status === "declining") && rememberers < 0.02 && rand.bool(0.0016)) {
+      const change = rand.pick(MUTATIONS);
+      if (!t.mutations.some((m) => m.change === change)) {
+        t.mutations.push({ day, change });
+        s.history.push(
+          makeEvent(day, `${t.name} Has Changed`, `${t.name} is no longer kept the way it was: ${change}.`, "culture")
+        );
+      }
+    }
+  }
+
+  // Revival: a dormant observance can come back if the records that describe it
+  // survive and an institution is there to read them. What returns is never
+  // quite what went away.
+  if (rand.bool(0.06)) {
+    const dormant = s.traditions.filter(
+      (t) => t.status === "dormant" && t.dormantSinceDay !== undefined && day - t.dormantSinceDay > yearLen * 25
+    );
+    const archive = s.archives.find((a) => a.topics.includes("colony_history"));
+    if (dormant.length && schools > 0 && archive && archive.integrity > 40) {
+      const t = rand.pick(dormant);
+      const gap = Math.round((day - (t.dormantSinceDay ?? day)) / yearLen);
+      const change = rand.pick(MUTATIONS);
+      t.status = "declining";
+      t.observance = rand.float(24, 34);
       t.lastRevivedDay = day;
+      t.revivedFrom = `reconstructed from the ${archive.name} after ${gap} years out of practice`;
+      t.mutations.push({ day, change });
+      t.description = `${t.description} Revived after ${gap} years from records rather than memory — ${change}.`;
       s.history.push(
-        makeEvent(day, `${t.name} Revived`, `${t.name} is being kept again, reconstructed from records and older people's accounts. What it means now is not quite what it meant before.`, "culture")
+        makeEvent(day, `${t.name} Revived`, `${t.name}, out of practice for ${gap} years, has been taken up again — reconstructed from the ${archive.name} rather than from anyone's memory of it. ${change.charAt(0).toUpperCase()}${change.slice(1)}.`, "culture")
       );
     }
   }

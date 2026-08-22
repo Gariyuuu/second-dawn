@@ -1,0 +1,40 @@
+CONTROL (no shock) at year 220:
+  control          pop  1670 | practitioners  92/142/216 | best skill 92/92/92 | tech(med/nrg/agr) 100/100/100 | upkeep  90 | meds  4268
+
+================================================================================================================
+STRONG INSTITUTIONS — schools and archives intact
+================================================================================================================
+  institutions at shock: 9 schools, archive integrity 92, recorded depth med 87, eng 87, agr 82
+  before           pop  1579 | practitioners  78/125/185 | best skill 92/92/92 | tech(med/nrg/agr) 100/100/100 | upkeep  90 | meds  4041
+  removed 381 experts in year 120
+  immediately      pop  1198 | practitioners   1/  3/  2 | best skill 39/34/39 | tech(med/nrg/agr) 100/100/100 | upkeep  90 | meds  4041
+  +5 years         pop  1267 | practitioners  19/ 28/ 45 | best skill 63/61/61 | tech(med/nrg/agr)  86/ 97/ 96 | upkeep  90 | meds  3262
+  +20 years        pop  1540 | practitioners  81/125/189 | best skill 92/92/92 | tech(med/nrg/agr) 100/100/100 | upkeep  90 | meds  3944
+  +50 years        pop  1914 | practitioners 114/178/272 | best skill 92/92/92 | tech(med/nrg/agr) 100/ 99/100 | upkeep  90 | meds  4877
+  +100 years       pop  1646 | practitioners  95/147/221 | best skill 92/92/92 | tech(med/nrg/agr) 100/100/100 | upkeep  90 | meds  4209
+
+================================================================================================================
+WEAK INSTITUTIONS — schools derelict, archives degraded to 18%
+================================================================================================================
+  institutions at shock: 0 schools, archive integrity 18, recorded depth med 87, eng 87, agr 82
+  before           pop  1579 | practitioners  78/125/185 | best skill 92/92/92 | tech(med/nrg/agr) 100/100/100 | upkeep  85 | meds  4041
+  removed 381 experts in year 120
+  immediately      pop  1198 | practitioners   1/  3/  2 | best skill 39/34/39 | tech(med/nrg/agr) 100/100/100 | upkeep  85 | meds  4041
+  +5 years         pop  1254 | practitioners   1/  2/  1 | best skill 39/34/39 | tech(med/nrg/agr)  52/ 54/ 52 | upkeep  90 | meds  3228
+  +20 years        pop  1518 | practitioners  60/ 96/134 | best skill 83/79/85 | tech(med/nrg/agr) 100/ 99/ 98 | upkeep  90 | meds  3889
+  +50 years        pop  1909 | practitioners 117/181/274 | best skill 92/92/92 | tech(med/nrg/agr) 100/100/100 | upkeep  88 | meds  4873
+  +100 years       pop  1619 | practitioners  93/147/219 | best skill 92/92/92 | tech(med/nrg/agr) 100/100/100 | upkeep  90 | meds  4141
+
+================================================================================================================
+RECOVERY COMPARISON AT +100 YEARS
+================================================================================================================
+                         control      strong-inst   weak-inst
+  medicine               92           95 (103%)     93 (101%)
+    best medicine        92           92 (100%)     92 (100%)
+  engineering            142          147 (104%)    147 (104%)
+    best engineering     92           92 (100%)     92 (100%)
+  agriculture            216          221 (102%)    219 (101%)
+    best agriculture     92           92 (100%)     92 (100%)
+  population             1670         1646 (99%)    1619 (97%)
+  upkeep condition       90           90            90
+  medicine stock         4268         4209          4141
