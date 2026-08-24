@@ -6,6 +6,7 @@ import type { Colonist, Building } from "@/lib/sim/types";
 import { terrainHeight } from "./Terrain";
 import { mulberry32 } from "@/lib/sim/rng";
 import { useSimStore } from "@/store/simStore";
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 
 // Instanced low-poly figures wandering between buildings. Rendering all colonists
 // individually with full character models is a later upgrade; this keeps 1000+ people cheap.
@@ -49,14 +50,21 @@ export default function Colonists({
     const body = bodyRef.current;
     const head = headRef.current;
     if (!body || !head) return;
-    const t = clock.elapsedTime;
+    // The wander orbit and the walk bob are decoration: the settlement's real
+    // state lives in the sim store, and what each colonist encodes visually
+    // (how many are alive, adult vs child scale, EVA suit vs civilian colour,
+    // skin tone) is positional-independent and still drawn every frame. Under
+    // reduced motion they hold their phase position on the ground instead of
+    // circling and bobbing forever.
+    const still = prefersReducedMotion();
+    const t = still ? 0 : clock.elapsedTime;
     for (let i = 0; i < living.length; i++) {
       const w = wander[i];
       const a = w.phase + t * w.speed;
       const x = w.cx + Math.cos(a) * w.radius;
       const z = w.cz + Math.sin(a * 0.7) * w.radius;
       const y = terrainHeight(x, z, seed);
-      const bob = Math.abs(Math.sin(t * 4 + w.phase)) * 0.03;
+      const bob = still ? 0 : Math.abs(Math.sin(t * 4 + w.phase)) * 0.03;
       dummy.position.set(x, y + 0.55 + bob, z);
       dummy.rotation.set(0, -a + Math.PI / 2, 0);
       const child = living[i].ageYears < 14;
