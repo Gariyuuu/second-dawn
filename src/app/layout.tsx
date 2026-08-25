@@ -15,7 +15,7 @@ const bodyFont = IBM_Plex_Sans({
 });
 
 const monoFont = JetBrains_Mono({
-  variable: "--font-mono",
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   weight: ["400", "500", "700"],
 });

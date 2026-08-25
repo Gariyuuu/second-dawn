@@ -30,7 +30,7 @@
 
   --font-display-stack: var(--font-display), ui-sans-serif, sans-serif;
   --font-body-stack: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-mono-stack: var(--font-mono), ui-monospace, monospace;
+  --font-mono-stack: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 120ms;
