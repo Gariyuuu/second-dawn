@@ -5,6 +5,7 @@
  * states: default · hover · focus-visible · active · disabled covered on all HUD controls
  */
 @import "tailwindcss";
+@import "./design-system/master.css";
 
 :root {
   /* paper (panel surfaces, dark → elevated) */
@@ -27,6 +28,27 @@
   --color-focus: oklch(80% 0.15 70);
   /* hairline */
   --rule: oklch(40% 0.02 70 / 0.5);
+
+  /* ---- PORTFOLIO DESIGN SYSTEM · MASTER v1.2 ------------------------------
+   * second-dawn keeps its palette, its type, its HUD and its 3D layer. These
+   * map the system's names onto tokens that ALREADY EXIST here -- checked
+   * name by name against :root, not assumed: an earlier draft of this block
+   * aliased --color-void and --color-paper, neither of which this repo
+   * declares. The surfaces are paper-0..3, and paper-0/1 carry alpha.
+   * --color-focus is authored and measures 7.14:1 worst case across every
+   * surface once that alpha is composited over the body, so --ring points at
+   * it rather than replacing it. */
+  --ring: var(--color-focus);
+  --background: oklch(10% 0.01 60);   /* the value body already paints */
+  --foreground: var(--color-ink);
+  --card: var(--color-paper-1);
+  --popover: var(--color-paper-2);
+  --border: var(--rule);
+  /* C7 -- Hud.tsx:491 is a real <input> and globals.css never styled it, so it
+   * drew the user-agent default boundary. Opaque, in second-dawn's warm hue,
+   * solved against all five surfaces WITH paper-0/1's alpha composited:
+   * worst 3.18:1. --rule is untouched: a hairline divider, decorative (C7). */
+  --input: oklch(0.58 0.02 60);
 
   --font-display-stack: var(--font-display), ui-sans-serif, sans-serif;
   --font-body-stack: var(--font-body), ui-sans-serif, system-ui, sans-serif;
@@ -146,8 +168,14 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ticker-enter { animation: none; }
-  .hud-btn, .hud-meter > div { transition: none; }
+  /* These NULL the property (animation-name / transition-property) rather than
+   * setting the same longhand the system's floor sets (animation-duration), so
+   * they are structurally immune to it -- unlike fluent, which set a duration
+   * and silently lost it. !important is added anyway as belt-and-suspenders:
+   * immunity by property-shape is one refactor from breaking, the day someone
+   * rewrites `animation: none` as `animation-duration: 0s`. */
+  .ticker-enter { animation: none !important; }
+  .hud-btn, .hud-meter > div { transition: none !important; }
 }
 
 /* scrollbars inside panels */
