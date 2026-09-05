@@ -1,12 +1,32 @@
 "use client";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Sky, Stars } from "@react-three/drei";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { useSimStore } from "@/store/simStore";
 import Terrain from "./Terrain";
 import Buildings from "./Buildings";
 import Colonists from "./Colonists";
 import Vegetation from "./Vegetation";
+import { BootScreen } from "../ui/BootScreen";
+
+/**
+ * Reports the scene's real arrival.
+ *
+ * A mounted Canvas is not a visible world: terrain still meshes, shaders still
+ * compile, and until the first frames land the page is a bare clear colour.
+ * Counting frames is the only true signal for that stretch, and four of them
+ * gives the boot bar something honest to move over instead of jumping 0 to 100.
+ */
+const READY_FRAMES = 4;
+function ReadySignal({ onFrame }: { onFrame: (n: number) => void }) {
+  const n = useRef(0);
+  useFrame(() => {
+    if (n.current > READY_FRAMES) return;
+    n.current += 1;
+    onFrame(n.current);
+  });
+  return null;
+}
 
 function SceneContents() {
   const version = useSimStore((s) => s.version);
@@ -63,16 +83,24 @@ function SceneContents() {
 }
 
 export default function WorldScene() {
+  const [frames, setFrames] = useState(0);
+  const ready = frames > READY_FRAMES;
   return (
-    <Canvas
-      shadows
-      camera={{ position: [42, 28, 42], fov: 50 }}
-      dpr={[1, 1.75]}
-      style={{ position: "absolute", inset: 0 }}
-    >
-      <Suspense fallback={null}>
-        <SceneContents />
-      </Suspense>
-    </Canvas>
+    <>
+      <Canvas
+        shadows
+        camera={{ position: [42, 28, 42], fov: 50 }}
+        dpr={[1, 1.75]}
+        style={{ position: "absolute", inset: 0 }}
+      >
+        <Suspense fallback={null}>
+          <SceneContents />
+        </Suspense>
+        <ReadySignal onFrame={setFrames} />
+      </Canvas>
+      {/* Held until real frames exist, so the colony is never revealed
+          mid-compile as an empty clear colour. */}
+      {!ready && <BootScreen stage="scene" progress={frames / (READY_FRAMES + 1)} />}
+    </>
   );
 }

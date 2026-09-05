@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import { Pause, Skull, X } from "lucide-react";
 import { useSimStore, type TimeSpeed, type PlayerMode } from "@/store/simStore";
 import type { Building, Colonist, ColonyPolicy, HistoryEvent, ResourceKind } from "@/lib/sim/types";
 import { findPerson, type PersonView } from "@/lib/sim/lookup";
@@ -113,7 +114,7 @@ export default function Hud() {
           <div className="hud-seg" role="group" aria-label="Simulation speed">
             {([0, 1, 10, 100] as TimeSpeed[]).map((s) => (
               <button key={s} onClick={() => setSpeed(s)} className="hud-btn" data-on={speed === s}>
-                {s === 0 ? "❚❚" : `${s}×`}
+                {s === 0 ? <Pause size={12} strokeWidth={2.25} aria-hidden /> : `${s}×`}
               </button>
             ))}
           </div>
@@ -216,8 +217,8 @@ export default function Hud() {
               >
                 {panel}
               </span>
-              <button onClick={() => setPanel(null)} className="hud-btn" aria-label="Close panel">
-                ✕
+              <button onClick={() => setPanel(null)} className="hud-btn" aria-label="Close panel" title="Close panel">
+                <X size={13} strokeWidth={2} aria-hidden />
               </button>
             </div>
             <div className="hud-scroll flex-1 overflow-y-auto p-4">
@@ -262,8 +263,8 @@ export default function Hud() {
       {/* ── god mode toolbar ────────────────────────────── */}
       {mode === "god" && (
         <div
-          className="pointer-events-auto flex flex-wrap items-center gap-3 border-t px-4 py-2 backdrop-blur"
-          style={{ background: "oklch(22% 0.06 310 / 0.85)", borderColor: "oklch(45% 0.1 310 / 0.5)" }}
+          className="pointer-events-auto flex flex-wrap items-center gap-3 border-t px-4 py-2"
+          style={{ background: "oklch(19% 0.055 310)", borderColor: "oklch(45% 0.1 310 / 0.5)" }}
         >
           <span className="hud-label" style={{ color: "var(--color-mode)" }}>
             Experiment mode
@@ -355,7 +356,7 @@ function DirectorBar() {
 
   return (
     <div
-      className="pointer-events-auto flex flex-col gap-2 border-t px-4 py-2.5 backdrop-blur"
+      className="pointer-events-auto flex flex-col gap-2 border-t px-4 py-2.5"
       style={{ background: "var(--color-paper-0)", borderColor: "var(--rule)" }}
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -813,8 +814,8 @@ function BuildingCard({
             {BUILDING_NAMES[b.type]} · standing {ageYears < 1 ? "under a year" : `${Math.floor(ageYears)} years`}
           </div>
         </div>
-        <button onClick={onClose} className="hud-btn" aria-label="Close">
-          ✕
+        <button onClick={onClose} className="hud-btn" aria-label="Close" title="Close">
+          <X size={13} strokeWidth={2} aria-hidden />
         </button>
       </div>
 
@@ -947,8 +948,8 @@ function ColonistCard({
             {c.bornOnEarth ? "Earth-born" : `generation ${c.generation}`}
           </div>
         </div>
-        <button onClick={onClose} className="hud-btn" aria-label="Close">
-          ✕
+        <button onClick={onClose} className="hud-btn" aria-label="Close" title="Close">
+          <X size={13} strokeWidth={2} aria-hidden />
         </button>
       </div>
 
@@ -1106,7 +1107,7 @@ function ColonistCard({
 
       {godMode && c.alive && (
         <button onClick={onKill} className="hud-btn mt-1 self-start" data-tone="danger">
-          ☠ Remove from simulation
+          <Skull size={13} strokeWidth={2} aria-hidden /> Remove from simulation
         </button>
       )}
     </div>
